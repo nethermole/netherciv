@@ -111,11 +111,8 @@ void AGlobeMaker::DrawBoard()
 
 	int pentCount = pentTiles.Num();
 	for (int i = 0; i < pentCount; i++) {
-		APentGlobeTile* newTile = GetWorld()->SpawnActor<APentGlobeTile>(pentGlobeTile, Util::GetVectorAtDistance(pentTiles[i]->GetActorLocation(), flatRadiusSpherePent), pentTiles[i]->GetTransform().GetRotation().Rotator());
-
-		if (i == 0) {
-			originPent = newTile;
-		}
+		pentTiles.Add(GetWorld()->SpawnActor<APentGlobeTile>(pentGlobeTile, Util::GetVectorAtDistance(pentTiles[i]->GetActorLocation(), flatRadiusSpherePent), pentTiles[i]->GetTransform().GetRotation().Rotator()));
+		//pentTiles[i]->SetActorLocation(Util::GetVectorAtDistance(pentTiles[i]->GetActorLocation() - baseSphereCenter, flatRadiusSpherePent));
 	}
 
 
@@ -129,32 +126,18 @@ void AGlobeMaker::DrawBoard()
 	FQuat flipOverpentTileEdge = FQuat(pentTileYaxis, FMath::DegreesToRadians(90.0 - (DIHEDRAL_ANGLE / 2)));
 
 
-	FQuat rotateToFlat = FQuat(flipOverpentTileEdge.GetAxisZ(), FMath::DegreesToRadians((360 / 6) / 2)) * flipOverpentTileEdge;
-
-
 	//Location
 	UE_LOG(LogTemp, Display, TEXT("originPentZ=%f"), originPent->GetTransform().GetLocation().Z);
 
 	UE_LOG(LogTemp, Display, TEXT("Rs+dZ=%f"), baseFlatRadiusSpherePent + (dZ/2));
 
 	double hexdX = flatRadiusHex * cos(FMath::DegreesToRadians(90.0 - (DIHEDRAL_ANGLE / 2)));
-	double hexdZ = flatRadiusHex * sin(FMath::DegreesToRadians(90.0 - (DIHEDRAL_ANGLE / 2)));
+	double hesdZ = flatRadiusHex * sin(FMath::DegreesToRadians(90.0 - (DIHEDRAL_ANGLE / 2)));
 
 	UE_LOG(LogTemp, Display, TEXT("hexdX=%f"), hexdX);
-	UE_LOG(LogTemp, Display, TEXT("hexdZ=%f"), hexdZ);
+	UE_LOG(LogTemp, Display, TEXT("hesdZ=%f"), hesdZ);
 
-	FVector hexLocation = originPent->GetTransform().GetLocation() + FVector(flatRadiusPent + hexdX, 0, 0) + FVector(0,0,-1 * hexdZ);
-
-	GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, hexLocation, rotateToFlat.Rotator());
-
-
-	//rotateAroundPent
-	for (int j = 1; j < 5; j++) {
-		FVector newLocation = Util::RotateRelativeToVectorAndQuat(hexLocation, FVector(0,0,0), FQuat(FVector::UpVector, FMath::DegreesToRadians(j * 360 / 5)));
-		FRotator newRotation = (FQuat(FVector::UpVector, FMath::DegreesToRadians(j * 360 / 5)) * rotateToFlat).Rotator();
-
-		GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, newLocation, newRotation);
-	}
+	//GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, hexLocation, flipOverpentTileEdge.Rotator());
 
 
 

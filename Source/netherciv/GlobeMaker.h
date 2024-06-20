@@ -4,6 +4,7 @@
 
 
 #include "PentGlobeTile.h"
+#include "HexGlobeTile.h"
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -31,5 +32,11 @@ public:
 		
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TSubclassOf<APentGlobeTile> pentGlobeTile;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TSubclassOf<AHexGlobeTile> hexGlobeTile;
+
+private:
+	TArray<APentGlobeTile*> GeneratedAdjacentPents(APentGlobeTile* originPent);
 
 };
