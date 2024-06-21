@@ -35,7 +35,7 @@ void AGlobeMaker::DrawBoard()
 	//
 	//	THIS IS THE ONE
 	//
-	int hexesBetweenPents = 100;
+	int hexesBetweenPents = 4;
 
 	double outerDihedralAngle = (180 - DIHEDRAL_ANGLE) / (hexesBetweenPents + 1);
 	UE_LOG(LogTemp, Display, TEXT("outerDihedralAngle=%f"), outerDihedralAngle);
@@ -100,9 +100,17 @@ void AGlobeMaker::DrawBoard()
 					hexTiles.Add(newHex);
 				}
 				else {
-					if (i <= hexGlobeTileRow.Num() / 2) {
-						AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
-						hexTiles.Add(newHex);
+					if (hexesBetweenPents % 0 == 1) {
+						if (i <= hexGlobeTileRow.Num() / 2) {
+							AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
+							hexTiles.Add(newHex);
+						}
+					}
+					else {
+						if (i < hexGlobeTileRow.Num() / 2) {
+							AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
+							hexTiles.Add(newHex);
+						}
 					}
 
 				}
