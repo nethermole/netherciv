@@ -29,17 +29,11 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void DrawBoard();
-
-	UFUNCTION(BlueprintCallable)
-	void DrawBoard2();
 		
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TSubclassOf<APentGlobeTile> pentGlobeTile;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TSubclassOf<AHexGlobeTile> hexGlobeTile;
-
-private:
-	TArray<APentGlobeTile*> GeneratedAdjacentPents(APentGlobeTile* originPent);
 
 };
