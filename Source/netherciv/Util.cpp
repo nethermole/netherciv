@@ -20,5 +20,11 @@ FVector Util::GetVectorAtDistance(FVector vector, double distance) {
 }
 
 FVector Util::RotateRelativeToVectorAndQuat(FVector in, FVector rotateAround, FQuat quat) {
-	return quat.RotateVector(in - rotateAround);
+	return quat.RotateVector(in - rotateAround) + rotateAround;
+}
+
+FVector Util::GetNormalizedCopyOfVector(FVector in) {
+	FVector copy = FVector(in);
+	copy.Normalize();
+	return copy;
 }
