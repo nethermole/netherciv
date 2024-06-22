@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "GlobeMaker.h"
-#include "Util.h"
 
+#include "Util.h"
 #include "math.h"
 
 
-#define PI 3.14159265
 #define DIHEDRAL_ANGLE 116.56505
+#define SCALE 100
 
 // Sets default values
 AGlobeMaker::AGlobeMaker()
@@ -17,174 +17,200 @@ AGlobeMaker::AGlobeMaker()
 
 }
 
-void AGlobeMaker::DrawBoard()
-{
-	double scale = 100.0;	//equal to flatRadiusHex
-	double flatRadiusHex = scale;
-	double edgeLength = 2 * (flatRadiusHex / tan(FMath::DegreesToRadians(60)));
+bool AGlobeMaker::IsPent(AActor* actor) {
+	return actor->IsA(APentGlobeTile::StaticClass());
+}
 
-	int centerPentagonAngle = 360 / 5;
-	int centerHexagonAngle = 360 / 6;
+bool AGlobeMaker::IsHex(AActor* actor) {
+	return actor->IsA(AHexGlobeTile::StaticClass());
+}
 
-	double flatRadiusPent = (edgeLength / 2) / tan(FMath::DegreesToRadians(centerPentagonAngle / 2));
+void AGlobeMaker::CalculateAttributes(int hexesBetweenPents) {
+	centerPentagonAngle = 360 / 5;
+	centerHexagonAngle = 360 / 6;
 
+	outerDihedralAngle = (180 - DIHEDRAL_ANGLE) / (hexesBetweenPents + 1);
 
-	TArray<AHexGlobeTile*> hexTiles = {};
-	TArray<APentGlobeTile*> pentTiles = {};
+	flatRadiusHex = SCALE;
+	edgeLength = 2 * (flatRadiusHex / tan(FMath::DegreesToRadians(60)));
+	flatRadiusPent = (edgeLength / 2) / tan(FMath::DegreesToRadians(centerPentagonAngle / 2));
+}
 
-	//
-	//	THIS IS THE ONE
-	//
-	int hexesBetweenPents = 5;
+void AGlobeMaker::DrawBoard(double sphereX, double sphereY, double sphereZ, int hexesBetweenPents) {
+	CalculateAttributes(hexesBetweenPents);
+	
+	TArray<AActor*> allTiles = {};
 
-	double outerDihedralAngle = (180 - DIHEDRAL_ANGLE) / (hexesBetweenPents + 1);
-	UE_LOG(LogTemp, Display, TEXT("outerDihedralAngle=%f"), outerDihedralAngle);
+	APentGlobeTile* northPoleTile = GetWorld()->SpawnActor<APentGlobeTile>(pentGlobeTile, FTransform(FVector(0, 0, 0)));
+	allTiles.Add(northPoleTile);
 
-	APentGlobeTile* originPent = GetWorld()->SpawnActor<APentGlobeTile>(pentGlobeTile, FTransform(FVector(0, 0, 0)));
-	pentTiles.Add(originPent);
+	double longitudeHexesDx = 0;
+	double longitudeHexesDz = 0;
+	TArray<AHexGlobeTile*> longitudeHexes = CreateInitialLongitudeHexes(northPoleTile, hexesBetweenPents, longitudeHexesDx, longitudeHexesDz);
+	allTiles.Append(longitudeHexes);
 
-	//5ths of northern hemisphere
-		//hexagon longitude
-		TArray<AHexGlobeTile*> hexGlobeTileRow = {};
+	APentGlobeTile* row1PentTile = CreateRow1Pent(longitudeHexesDx, longitudeHexesDz, hexesBetweenPents);
+	allTiles.Add(row1PentTile);
 
-		double totalHexDx = flatRadiusPent;
-		double totalHexDz = 0;
-		for (int longitudeHexesPlaced = 0; longitudeHexesPlaced < hexesBetweenPents; longitudeHexesPlaced++) {
-			double hexDx = cos(FMath::DegreesToRadians(outerDihedralAngle * (longitudeHexesPlaced + 1))) * flatRadiusHex;
-			double hexDz = sin(FMath::DegreesToRadians(outerDihedralAngle * (longitudeHexesPlaced + 1))) * flatRadiusHex;
+	TArray<AHexGlobeTile*> row1Hexes = RotateInitialLongitudeHexesAroundRow1Pent(longitudeHexes, row1PentTile);
+	allTiles.Append(row1Hexes);
+	TArray<AHexGlobeTile*> equatorHexes = RotateInitialLongitudeHexesAroundRow1PentToEquator(longitudeHexes, row1PentTile);
+	allTiles.Append(equatorHexes);
 
-			totalHexDx += hexDx;
-			totalHexDz += hexDz;
+	TArray<AActor*> northernHemisphereTilesToRotate = {};
+	northernHemisphereTilesToRotate.Append(longitudeHexes);
+	northernHemisphereTilesToRotate.Add(row1PentTile);
+	northernHemisphereTilesToRotate.Append(row1Hexes);
+	northernHemisphereTilesToRotate.Append(equatorHexes);
+	TArray<AActor*> rotatedNorthernHemisphereTiles = RotateNorthernHemisphereFifth(northernHemisphereTilesToRotate);
+	allTiles.Append(rotatedNorthernHemisphereTiles);
 
-			FVector hexLocation = FVector(totalHexDx, 0, -1 * totalHexDz);
-			FQuat hexRotation = FQuat(originPent->GetTransform().GetRotation().GetAxisY(), FMath::DegreesToRadians(outerDihedralAngle * (longitudeHexesPlaced + 1)));
-			hexRotation = FQuat(hexRotation.GetAxisZ(), FMath::DegreesToRadians(centerHexagonAngle / 2)) * hexRotation;		//make the flats line up
+	double halfDistBetweenPents = row1PentTile->GetActorLocation().Length() / 2;	//since origin is at 0,0
+	double sphereRadiusPent = halfDistBetweenPents / sin(FMath::DegreesToRadians(90 - (DIHEDRAL_ANGLE / 2)));
+	for (int i = 0; i < allTiles.Num(); i++) {
+		allTiles[i]->SetActorLocation(allTiles[i]->GetActorLocation() + FVector(0,0, sphereRadiusPent));
+	}
 
-			AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, hexLocation, hexRotation.Rotator());
+	TArray<AActor*> southernHemisphereTiles = RotateToSouthHemisphere(allTiles);
+	allTiles.Append(southernHemisphereTiles);
+}
 
-			hexGlobeTileRow.Add(newHex);	//collect them for reuse
-			hexTiles.Add(newHex);
+TArray<AActor*> AGlobeMaker::RotateToSouthHemisphere(TArray<AActor*> northTiles) {
+	TArray<AActor*> tiles = {};
 
-			//finish crossing the hexagon
-			totalHexDx += hexDx;
-			totalHexDz += hexDz;
-		}
+	for (int i = 0; i < northTiles.Num(); i++) {
+		FVector position = northTiles[i]->GetTransform().GetLocation();
+		FQuat rotation = northTiles[i]->GetTransform().GetRotation();
 
-		//row 1 pentagon
-		double row1PentDx = cos(FMath::DegreesToRadians(outerDihedralAngle * (hexesBetweenPents + 1))) * flatRadiusPent;
-		double row1PentDz = sin(FMath::DegreesToRadians(outerDihedralAngle * (hexesBetweenPents + 1))) * flatRadiusPent;
+		FQuat pivot = FQuat(FVector::YAxisVector, FMath::DegreesToRadians(180));
 
-		totalHexDx += row1PentDx;
-		totalHexDz += row1PentDz;
-
-		FVector row1PentLocation = FVector(totalHexDx, 0, -1 * totalHexDz);
-		FQuat row1PentRotation = FQuat(originPent->GetTransform().GetRotation().GetAxisY(), FMath::DegreesToRadians(outerDihedralAngle * (hexesBetweenPents + 1)));
-		row1PentRotation = FQuat(row1PentRotation.GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle / 2)) * row1PentRotation;		//make the flats line up
-
-		APentGlobeTile* row1Pent = GetWorld()->SpawnActor<APentGlobeTile>(pentGlobeTile, row1PentLocation, row1PentRotation.Rotator());
-		pentTiles.Add(row1Pent);
-
-		//rotated hex row
-		for (int i = 0; i < hexGlobeTileRow.Num(); i++) {
-			FVector hexPosition = hexGlobeTileRow[i]->GetTransform().GetLocation();
-			FQuat hexRotation = hexGlobeTileRow[i]->GetTransform().GetRotation();
-
-			//do 2 sides
-			for (int j = 1; j <= 3; j++) {
-				FVector rotatedPosition = Util::RotateRelativeToVectorAndQuat(hexPosition, row1PentLocation, FQuat(row1PentRotation.GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle * j)));
-				FQuat rotatedRotation = FQuat(row1PentRotation.GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle * j)) * hexRotation;
-
-				//only fully do horizontal hexes. do HALF middle rows
-				if (j == 1) {
-					AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
-					hexTiles.Add(newHex);
-				}
-				else {
-					if (hexesBetweenPents % 2 == 0) {
-						if (i < hexGlobeTileRow.Num() / 2) {
-							AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
-							hexTiles.Add(newHex);
-						}
-					}
-					else {
-						if (i <= hexGlobeTileRow.Num() / 2) {
-							AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
-							hexTiles.Add(newHex);
-						}
-					}
-				}
-			}
-
-		}
-
-//Do 5ths rotations
-		int hemisphereFifthHexTileCount = hexTiles.Num();
-		for (int i = 0; i < hemisphereFifthHexTileCount; i++) {
-			for (int j = 1; j < 5; j++) {
-				FVector hexPosition = hexTiles[i]->GetTransform().GetLocation();
-				FQuat hexRotation = hexTiles[i]->GetTransform().GetRotation();
-
-				FVector rotatedPosition = Util::RotateRelativeToVectorAndQuat(hexPosition, FVector(0, 0, 0), FQuat(originPent->GetTransform().GetRotation().GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle * j)));
-				FQuat rotatedRotation = FQuat(originPent->GetTransform().GetRotation().GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle * j)) * hexRotation;
-
+		FVector rotatedPosition = Util::RotateRelativeToVectorAndQuat(position, FVector(0, 0, 0), pivot);
+		FQuat rotatedRotation = pivot * rotation;
+		if (!(rotatedPosition.Z < 1 && rotatedPosition.Z > -1)) {	//dont dupe equator z=0 tiles
+			if (IsHex(northTiles[i])) {
 				AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
-				hexTiles.Add(newHex);
+				tiles.Add(newHex);
 			}
-		}
-
-		int hemisphereFifthPentTileCount = pentTiles.Num();
-		for (int i = 1; i < hemisphereFifthPentTileCount; i++) {	//start at 1 to skip north pole
-			for (int j = 1; j < 5; j++) {
-				FVector pentPosition = pentTiles[i]->GetTransform().GetLocation();
-				FQuat pentRotation = pentTiles[i]->GetTransform().GetRotation();
-
-				FVector rotatedPosition = Util::RotateRelativeToVectorAndQuat(pentPosition, FVector(0, 0, 0), FQuat(originPent->GetTransform().GetRotation().GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle * j)));
-				FQuat rotatedRotation = FQuat(originPent->GetTransform().GetRotation().GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle * j)) * pentRotation;
-
+			else if(northTiles[i]){
 				APentGlobeTile* newPent = GetWorld()->SpawnActor<APentGlobeTile>(pentGlobeTile, rotatedPosition, rotatedRotation.Rotator());
-				pentTiles.Add(newPent);
+				tiles.Add(newPent);
+			}
+			else {
+				UE_LOG(LogTemp, Display, TEXT("RotateToSouthHemisphere() Unexpected tile type found during world generation"));
 			}
 		}
+	}
+	return tiles;
+}
 
-//Do hemisphere rotation
-		double halfDistBetweenPents = (row1PentLocation - originPent->GetTransform().GetLocation()).Length() / 2;
-		double sphereRadiusPent = halfDistBetweenPents / sin(FMath::DegreesToRadians(90 - (DIHEDRAL_ANGLE / 2)));
+TArray<AActor*> AGlobeMaker::RotateNorthernHemisphereFifth(TArray<AActor*> northernHemisphereTilesToRotate) {
+	TArray<AActor*> tiles = {};
 
-		//Raise everything by radius
-		for (int i = 0; i < hexTiles.Num(); i++) {
-			hexTiles[i]->SetActorLocation(hexTiles[i]->GetActorLocation() + FVector(0, 0, sphereRadiusPent));
+	for (int i = 0; i < northernHemisphereTilesToRotate.Num(); i++) {
+		for (int pentRotation = 1; pentRotation < 5; pentRotation++) {
+			FVector position = northernHemisphereTilesToRotate[i]->GetTransform().GetLocation();
+			FQuat rotation = northernHemisphereTilesToRotate[i]->GetTransform().GetRotation();
+
+			FVector rotatedPosition = Util::RotateRelativeToVectorAndQuat(position, FVector(0, 0, 0), FQuat(FVector::UpVector, FMath::DegreesToRadians(centerPentagonAngle * pentRotation)));
+			FQuat rotatedRotation = FQuat(FVector::UpVector, FMath::DegreesToRadians(centerPentagonAngle * pentRotation)) * rotation;
+
+			if (IsHex(northernHemisphereTilesToRotate[i])) {
+				AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
+				tiles.Add(newHex);
+			}
+			else {
+				APentGlobeTile* newPent = GetWorld()->SpawnActor<APentGlobeTile>(pentGlobeTile, rotatedPosition, rotatedRotation.Rotator());
+				tiles.Add(newPent);
+			}
 		}
-		for (int i = 0; i < pentTiles.Num(); i++) {
-			pentTiles[i]->SetActorLocation(pentTiles[i]->GetActorLocation() + FVector(0, 0, sphereRadiusPent));
+	}
+
+	return tiles;
+}
+
+TArray<AHexGlobeTile*> AGlobeMaker::RotateInitialLongitudeHexesAroundRow1PentToEquator(TArray<AHexGlobeTile*> longitudeHexes, APentGlobeTile* row1PentTile) {
+	TArray<AHexGlobeTile*> tiles = {};
+
+	FVector row1PentLocation = row1PentTile->GetActorLocation();
+	FQuat row1PentRotation = row1PentTile->GetActorTransform().GetRotation();
+
+	for (int pentagonAngleRotations = 2; pentagonAngleRotations <= 3; pentagonAngleRotations++) {
+		for (int i = longitudeHexes.Num()-1; i >= longitudeHexes.Num() / 2; i--) {						//TODO: THIS IS A HACK AF TO GET ONLY THE FIRST HALF OF EQUATOR TILES
+			FVector hexPosition = longitudeHexes[i]->GetTransform().GetLocation();
+			FQuat hexRotation = longitudeHexes[i]->GetTransform().GetRotation();
+
+			FQuat pivot = FQuat(row1PentRotation.GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle * pentagonAngleRotations));
+
+			FVector rotatedPosition = Util::RotateRelativeToVectorAndQuat(hexPosition, row1PentLocation, pivot);
+			FQuat rotatedRotation = pivot * hexRotation;
+
+			AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
+			tiles.Add(newHex);
 		}
+	}
 
-		//Rotate over center over Y axis
-		int hemisphereHexTileCount = hexTiles.Num();
-		for (int i = 0; i < hemisphereHexTileCount; i++) {
-				FVector hexPosition = hexTiles[i]->GetTransform().GetLocation();
-				FQuat hexRotation = hexTiles[i]->GetTransform().GetRotation();
+	return tiles;
+}
 
-				FVector rotatedPosition = Util::RotateRelativeToVectorAndQuat(hexPosition, FVector(0, 0, 0), FQuat(originPent->GetTransform().GetRotation().GetAxisY(), FMath::DegreesToRadians(180)));
-				FQuat rotatedRotation = FQuat(originPent->GetTransform().GetRotation().GetAxisY(), FMath::DegreesToRadians(180)) * hexRotation;
+TArray<AHexGlobeTile*> AGlobeMaker::RotateInitialLongitudeHexesAroundRow1Pent(TArray<AHexGlobeTile*> longitudeHexes, APentGlobeTile* row1PentTile) {
+	TArray<AHexGlobeTile*> tiles = {};
 
-				//don't dupe tiles at height (0,0) equator
-				if (!(rotatedPosition.Z < 1 && rotatedPosition.Z > -1)) {
-					AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
-					hexTiles.Add(newHex);
-				}
-		}
-		int hemispherePentTileCount = pentTiles.Num();
-		for (int i = 0; i < hemispherePentTileCount; i++) {
-			FVector pentPosition = pentTiles[i]->GetTransform().GetLocation();
-			FQuat pentRotation = pentTiles[i]->GetTransform().GetRotation();
+	FVector row1PentLocation = row1PentTile->GetActorLocation();
+	FQuat row1PentRotation = row1PentTile->GetActorTransform().GetRotation();
 
-			FVector rotatedPosition = Util::RotateRelativeToVectorAndQuat(pentPosition, FVector(0, 0, 0), FQuat(originPent->GetTransform().GetRotation().GetAxisY(), FMath::DegreesToRadians(180)));
-			FQuat rotatedRotation = FQuat(originPent->GetTransform().GetRotation().GetAxisY(), FMath::DegreesToRadians(180)) * pentRotation;
+	for (int i = 0; i < longitudeHexes.Num(); i++) {
+		FVector hexPosition = longitudeHexes[i]->GetTransform().GetLocation();
+		FQuat hexRotation = longitudeHexes[i]->GetTransform().GetRotation();
 
-			APentGlobeTile* newPent = GetWorld()->SpawnActor<APentGlobeTile>(pentGlobeTile, rotatedPosition, rotatedRotation.Rotator());
-			pentTiles.Add(newPent);
+		FVector rotatedPosition = Util::RotateRelativeToVectorAndQuat(hexPosition, row1PentLocation, FQuat(row1PentRotation.GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle)));
+		FQuat rotatedRotation = FQuat(row1PentRotation.GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle)) * hexRotation;
 
-		}
+		AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, rotatedPosition, rotatedRotation.Rotator());
+		tiles.Add(newHex);
+	}
+
+	return tiles;
+}
+
+APentGlobeTile* AGlobeMaker::CreateRow1Pent(double longitudeHexesDx, double longitudeHexesDz, int hexesBetweenPents) {
+	double row1PentDx = cos(FMath::DegreesToRadians(outerDihedralAngle * (hexesBetweenPents + 1))) * flatRadiusPent;
+	double row1PentDz = sin(FMath::DegreesToRadians(outerDihedralAngle * (hexesBetweenPents + 1))) * flatRadiusPent;
+
+	FVector row1PentLocation = FVector(longitudeHexesDx + row1PentDx, 0, -1 * (longitudeHexesDz + row1PentDz));
+	FQuat row1PentRotation = FQuat(FVector::YAxisVector, FMath::DegreesToRadians(outerDihedralAngle * (hexesBetweenPents + 1)));
+	row1PentRotation = FQuat(row1PentRotation.GetAxisZ(), FMath::DegreesToRadians(centerPentagonAngle / 2)) * row1PentRotation;		//make the flats line up
+
+	APentGlobeTile* row1Pent = GetWorld()->SpawnActor<APentGlobeTile>(pentGlobeTile, row1PentLocation, row1PentRotation.Rotator());
+	return row1Pent;
+}
+
+TArray<AHexGlobeTile*> AGlobeMaker::CreateInitialLongitudeHexes(APentGlobeTile* northPoleTile, int hexesBetweenPents, double& result_totalDx, double& result_totalDz){
+	TArray<AHexGlobeTile*> tiles = {};
+
+	double totalDx = flatRadiusPent;
+	double totalDz = 0;
+	for (int longitudeHexesPlaced = 0; longitudeHexesPlaced < hexesBetweenPents; longitudeHexesPlaced++) {
+		double hexDx = cos(FMath::DegreesToRadians(outerDihedralAngle * (longitudeHexesPlaced + 1))) * flatRadiusHex;
+		double hexDz = sin(FMath::DegreesToRadians(outerDihedralAngle * (longitudeHexesPlaced + 1))) * flatRadiusHex;
+
+		totalDx += hexDx;
+		totalDz += hexDz;
+
+		FVector hexLocation = FVector(totalDx, 0, -1 * totalDz);
+		FQuat hexRotation = FQuat(northPoleTile->GetTransform().GetRotation().GetAxisY(), FMath::DegreesToRadians(outerDihedralAngle * (longitudeHexesPlaced + 1)));
+		hexRotation = FQuat(hexRotation.GetAxisZ(), FMath::DegreesToRadians(centerHexagonAngle / 2)) * hexRotation;		//make the flats line up
+
+		AHexGlobeTile* newHex = GetWorld()->SpawnActor<AHexGlobeTile>(hexGlobeTile, hexLocation, hexRotation.Rotator());
+		tiles.Add(newHex);
+
+		//finish crossing the hexagon
+		totalDx += hexDx;
+		totalDz += hexDz;
+	}
+
+	result_totalDx = totalDx;
+	result_totalDz = totalDz;
+	return tiles;
 }
 
 

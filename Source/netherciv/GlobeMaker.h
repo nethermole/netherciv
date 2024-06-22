@@ -28,7 +28,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	void DrawBoard();
+	void DrawBoard_old();
+
+	UFUNCTION(BlueprintCallable)
+	void DrawBoard(double sphereX, double sphereY, double sphereZ, int hexesBetweenPents);
 		
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TSubclassOf<APentGlobeTile> pentGlobeTile;
@@ -36,4 +39,22 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TSubclassOf<AHexGlobeTile> hexGlobeTile;
 
+private:
+	double flatRadiusHex;
+	double edgeLength;
+	int centerPentagonAngle;
+	int centerHexagonAngle;
+	double flatRadiusPent;
+	double outerDihedralAngle;
+
+	bool IsHex(AActor* actor);
+	bool IsPent(AActor* actor);
+
+	void CalculateAttributes(int hexesBetweenPents);
+	TArray<AHexGlobeTile*> CreateInitialLongitudeHexes(APentGlobeTile* northPoleTile, int hexesBetweenPents, double& result_totalDx, double& result_totalDz);
+	APentGlobeTile* CreateRow1Pent(double longitudeHexesDx, double longitudeHexesDz, int hexesBetweenPents);
+	TArray<AHexGlobeTile*> RotateInitialLongitudeHexesAroundRow1Pent(TArray<AHexGlobeTile*> longitudeHexes, APentGlobeTile* row1PentTile);
+	TArray<AHexGlobeTile*> RotateInitialLongitudeHexesAroundRow1PentToEquator(TArray<AHexGlobeTile*> longitudeHexes, APentGlobeTile* row1PentTile);
+	TArray<AActor*> RotateNorthernHemisphereFifth(TArray<AActor*> northernHemisphereTilesToRotate);
+	TArray<AActor*> RotateToSouthHemisphere(TArray<AActor*> northTiles);
 };
