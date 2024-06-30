@@ -77,7 +77,7 @@ void AProceduralGlobe::GenerateWorld() {
 
 					FVector verticeLocation = FVector(xCoord, yCoord, zCoord);
 					//verticeLocation = Util::RotateRelativeToVectorAndQuat(verticeLocation, FVector(0, 0, 0), FQuat(FVector::YAxisVector, FMath::DegreesToRadians(DIHEDRAL_ANGLE / 2)));
-					verticeLocation = Util::GetVectorAtDistance(verticeLocation, 200);
+					verticeLocation = Util::GetVectorAtDistance(verticeLocation, 1000);
 					v[matrix].Add(verticeLocation);
 
 					ASpherePoint* newSpherePoint = GetWorld()->SpawnActor<ASpherePoint>(spherePoint, FTransform(verticeLocation));
@@ -132,34 +132,76 @@ void AProceduralGlobe::GenerateWorld() {
 //6) For every cycle, allocate and assign a face structure.*/
 	TArray<face*> faces = GetFacesFromHalfEdges(halfEdgesBetweenVertices);
 	UE_LOG(LogTemp, Display, TEXT("faces total = %d"), faces.Num());
-	for (int i = 0; i < faces.Num(); i++) {
-		UE_LOG(LogTemp, Display, TEXT("facename = %s"), *(faces[i]->name));
-		UE_LOG(LogTemp, Display, TEXT("\t"), *(faces[i]->rep->name));
-		UE_LOG(LogTemp, Display, TEXT("\t"), *(faces[i]->rep2->name));
-		UE_LOG(LogTemp, Display, TEXT("\t"), *(faces[i]->rep3->name));
-		UE_LOG(LogTemp, Display, TEXT("\t"), *(faces[i]->rep4->name));
-		UE_LOG(LogTemp, Display, TEXT("\t"), *(faces[i]->rep5->name));
-	}
 
 //Do subdivisions
-	//int faceCount = faces.Num();
-	//for (int f = 0; f < faceCount; f++) {
-	//	face* faceRef = faces[f];
+	int faceCount = faces.Num();
+	for (int f = 0; f < faceCount; f++) {
+		face* faceRef = faces[f];
 
-	//	FVector midpointLoc = FVector(0, 0, 0);
-	//	for (int i = 0; i < faceRef->reps.Num(); i++) {
-	//		midpointLoc += faceRef->reps[i]->tail->location;
-	//	}
-	//	midpointLoc /= faceRef->reps.Num();
-	//	midpointLoc = Util::GetVectorAtDistance(midpointLoc, vertices[0]->location.Length());
+		FVector midpointLoc = FVector(0, 0, 0);
+		for (int i = 0; i < faceRef->reps.Num(); i++) {
+			midpointLoc += faceRef->reps[i]->tail->location;
+		}
+		midpointLoc /= faceRef->reps.Num();
+		midpointLoc = Util::GetVectorAtDistance(midpointLoc, vertices[0]->location.Length());
 
-	//	vertex* midpoint = new vertex();
-	//	midpoint->location = midpointLoc;
+		vertex* midpoint = new vertex();
+		vertices.Add(midpoint);
+		midpoint->location = midpointLoc;
+		midpoint->name = "";
+		halfEdgesBetweenVertices.Add(midpoint, {});
 
-	//	for (int e = 0; e < faceRef->reps.Num(); e++) {
-	//		half_edge* edge = faceRef->reps[e];
-	//	}
-	//}
+		TMap<half_edge*, TArray<half_edge*>> from_to_midpointEdgeMap = {};
+		for (int e = 0; e < faceRef->reps.Num(); e++) {
+			half_edge* edge = faceRef->reps[e];
+			midpoint->name += edge->name;
+
+			half_edge* toMid = new half_edge();
+			half_edge* fromMid = new half_edge();
+			toMid->twin = fromMid;
+			fromMid->twin = toMid;
+			toMid->tail = edge->tail;
+			fromMid->tail = midpoint;
+
+			midpoint->rep = fromMid;
+
+			from_to_midpointEdgeMap.Add(edge, { fromMid, toMid });
+		}
+
+		int hec = 0;
+		for (int e = 0; e < faceRef->reps.Num(); e++) {
+			half_edge* edge = faceRef->reps[e];
+
+			half_edge* new_prev = from_to_midpointEdgeMap[edge][0];
+			half_edge* new_next = from_to_midpointEdgeMap[edge->next][1];
+
+			new_prev->next = edge;
+			edge->next = new_next;
+			new_next->next = new_prev;
+
+			new_prev->prev = new_next;
+			edge->prev = new_prev;
+			new_next->prev = edge;
+
+			new_prev->name = new_prev->twin->tail->name;
+			new_next->name = new_next->twin->tail->name;
+
+
+			halfEdgesBetweenVertices[new_prev->tail].Add(TTuple<vertex*, half_edge*>(new_prev->twin->tail, new_prev));
+			halfEdgesBetweenVertices[new_next->tail].Add(TTuple<vertex*, half_edge*>(new_next->twin->tail, new_next));
+
+
+			hec += 2;
+
+			UE_LOG(LogTemp, Display, TEXT("added half edge for %s-%s, %s, %s"), *(edge->tail->name), *(edge->twin->tail->name), *(edge->prev->tail->name), *(edge->next->twin->tail->name));
+		}
+		UE_LOG(LogTemp, Display, TEXT("ddwone with face %s"), *(midpoint->name));
+	}
+	UE_LOG(LogTemp, Display, TEXT("halfEdgesBetweenVertices num = %d"), halfEdgesBetweenVertices.Num());
+
+	faces = GetFacesFromHalfEdges(halfEdgesBetweenVertices);
+	UE_LOG(LogTemp, Display, TEXT("faces total = %d"), faces.Num());
+
 
 
 //Prepare vertices and triangles
@@ -196,6 +238,7 @@ void AProceduralGlobe::GenerateWorld() {
 TArray<face*> AProceduralGlobe::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices) {
 	TArray<half_edge*> allHalfEdges = {};
 	
+	//populateAll HalfEdges, effectively unpacking the nested map
 	TArray<vertex*> outerKeys = {};
 	halfEdgesBetweenVertices.GetKeys(outerKeys);
 	for (int i = 0; i < outerKeys.Num(); i++) {
@@ -211,37 +254,50 @@ TArray<face*> AProceduralGlobe::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*
 	for (int i = 0; i < allHalfEdges.Num(); i++) {
 		if (!visitedEdges.Contains(allHalfEdges[i])) {
 			face* newFace = new face();
-
-			newFace->rep = allHalfEdges[i];
-			newFace->rep2 = allHalfEdges[i]->next;
-			newFace->rep3 = allHalfEdges[i]->next->next;
-			newFace->rep4 = allHalfEdges[i]->next->next->next;
-			newFace->rep5 = allHalfEdges[i]->next->next->next->next;
-
 			newFace->reps = {};
-			newFace->reps.Add(newFace->rep);
-			newFace->reps.Add(newFace->rep2);
-			newFace->reps.Add(newFace->rep3);
-			newFace->reps.Add(newFace->rep4);
-			newFace->reps.Add(newFace->rep5);
+			newFace->name = "";
 
-			newFace->name = newFace->rep->name;
-			newFace->name += newFace->rep2->name;
-			newFace->name += newFace->rep3->name;
-			newFace->name += newFace->rep4->name;
-			newFace->name += newFace->rep5->name;
+			half_edge* current_edge = allHalfEdges[i];
+			while (!visitedEdges.Contains(current_edge)) {
+				newFace->name += current_edge->name;
 
-			allHalfEdges[i]->left = newFace;
-			allHalfEdges[i]->next->left = newFace;
-			allHalfEdges[i]->next->next->left = newFace;
-			allHalfEdges[i]->next->next->next->left = newFace;
-			allHalfEdges[i]->next->next->next->next->left = newFace;
+				newFace->reps.Add(current_edge);
+				current_edge->left = newFace;
+				visitedEdges.Add(current_edge);
 
-			visitedEdges.Add(allHalfEdges[i]);
-			visitedEdges.Add(allHalfEdges[i]->next);
-			visitedEdges.Add(allHalfEdges[i]->next->next);
-			visitedEdges.Add(allHalfEdges[i]->next->next->next);
-			visitedEdges.Add(allHalfEdges[i]->next->next->next->next);
+				current_edge = current_edge->next;
+			}
+
+			//newFace->rep = allHalfEdges[i];
+			//newFace->rep2 = allHalfEdges[i]->next;
+			//newFace->rep3 = allHalfEdges[i]->next->next;
+			//newFace->rep4 = allHalfEdges[i]->next->next->next;
+			//newFace->rep5 = allHalfEdges[i]->next->next->next->next;
+
+			//newFace->reps = {};
+			//newFace->reps.Add(newFace->rep);
+			//newFace->reps.Add(newFace->rep2);
+			//newFace->reps.Add(newFace->rep3);
+			//newFace->reps.Add(newFace->rep4);
+			//newFace->reps.Add(newFace->rep5);
+
+			//newFace->name = newFace->rep->name;
+			//newFace->name += newFace->rep2->name;
+			//newFace->name += newFace->rep3->name;
+			//newFace->name += newFace->rep4->name;
+			//newFace->name += newFace->rep5->name;
+
+			//allHalfEdges[i]->left = newFace;
+			//allHalfEdges[i]->next->left = newFace;
+			//allHalfEdges[i]->next->next->left = newFace;
+			//allHalfEdges[i]->next->next->next->left = newFace;
+			//allHalfEdges[i]->next->next->next->next->left = newFace;
+
+			//visitedEdges.Add(allHalfEdges[i]);
+			//visitedEdges.Add(allHalfEdges[i]->next);
+			//visitedEdges.Add(allHalfEdges[i]->next->next);
+			//visitedEdges.Add(allHalfEdges[i]->next->next->next);
+			//visitedEdges.Add(allHalfEdges[i]->next->next->next->next);
 
 			faces.Add(newFace);
 		}
