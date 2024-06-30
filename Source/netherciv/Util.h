@@ -16,6 +16,4 @@ public:
 	static FVector GetVectorAtDistance(FVector vector, double distance);
 
 	static FVector RotateRelativeToVectorAndQuat(FVector in, FVector rotateAround, FQuat quat);
-
-	static FVector GetNormalizedCopyOfVector(FVector in);
 };

@@ -4,19 +4,26 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "PentGlobeTile.generated.h"
+#include "SpherePoint.generated.h"
 
 UCLASS()
-class NETHERCIV_API APentGlobeTile : public AActor
+class NETHERCIV_API ASpherePoint : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	APentGlobeTile();
+	ASpherePoint();
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TSubclassOf<APentGlobeTile> pentGlobeTile;
+	FColor color;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int index;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void Initialize();
+	
 
 protected:
 	// Called when the game starts or when spawned
