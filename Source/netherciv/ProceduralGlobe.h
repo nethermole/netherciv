@@ -30,9 +30,12 @@ public:
 
 	TMap<vertex*, TMap<vertex*, half_edge*>> GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices);
 
-	void DoClockwiseAssignment(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices, TSet<vertex*> originalVertices);
+	void DoClockwiseAssignment(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices, TSet<vertex*> originalVertices, bool isHexGlobe);
 
 	TArray<face*> GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices);
+
+	TMap<vertex*, TArray<vertex*>> GetHexGlobeAdjacencies(TArray<vertex*> vertices);
+
 
 	void LogVector(FVector in);
 
