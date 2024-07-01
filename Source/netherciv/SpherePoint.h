@@ -19,7 +19,7 @@ public:
 	FColor color;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int index;
+	FString floatingLabel;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void Initialize();

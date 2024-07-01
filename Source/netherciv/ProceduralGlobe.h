@@ -24,13 +24,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void GenerateWorld();
 
-	TMap<vertex*, TArray<vertex*>> GetVertexAdjacencies(TArray<vertex*> vertices);
+	TMap<vertex*, TArray<vertex*>> GetVertexAdjacencies(TArray<vertex*> vertices, TSet<vertex*> originalVertices);
 
 	TArray<half_edge*>  CreateHalfEdges(vertex* v1, vertex* v2);
 
 	TMap<vertex*, TMap<vertex*, half_edge*>> GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices);
 
-	void DoClockwiseAssignment(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices);
+	void DoClockwiseAssignment(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices, TSet<vertex*> originalVertices);
 
 	TArray<face*> GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices);
 
