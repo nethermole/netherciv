@@ -32,11 +32,8 @@ public:
 
 	TArray<face*> GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices);
 
-	TMap<vertex*, TArray<vertex*>> GetHexGlobeAdjacencies(TArray<vertex*> vertices);
+	TMap<vertex*, TArray<vertex*>> GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices);
 
-
-
-	void LogVector(FVector in);
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TSubclassOf<ASpherePoint> spherePoint;

@@ -203,16 +203,16 @@ TMap<vertex*, TArray<vertex*>> AProceduralGlobe::GetVertexAdjacencies(TArray<ver
 	return adjacencies;
 }
 
-TMap<vertex*, TArray<vertex*>> AProceduralGlobe::GetHexGlobeAdjacencies(TArray<vertex*> vertices) {
+TMap<vertex*, TArray<vertex*>> AProceduralGlobe::GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices) {
 	TMap<vertex*, TArray<vertex*>> adjacencies = {};
 
-	for (int i = 0; i < vertices.Num(); i++) {
-		vertex* v1 = vertices[i];
+	for (int i = 0; i < hexGlobeVertices.Num(); i++) {
+		vertex* v1 = hexGlobeVertices[i];
 
 		TMap<vertex*, double> edgeDistances = {};
-		for (int j = 0; j < vertices.Num(); j++) {
+		for (int j = 0; j < hexGlobeVertices.Num(); j++) {
 			if (j != i) {
-				vertex* v2 = vertices[j];
+				vertex* v2 = hexGlobeVertices[j];
 				double distance = (v1->location - v2->location).Length();
 				edgeDistances.Add(v2, distance);
 			}
