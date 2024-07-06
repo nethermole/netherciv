@@ -48,7 +48,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<int> triangles;
 
+	DoublyConnectedEdgeList* dcel;
 
+	void LoadIcosahedronCartesianCoordinates();
 
 
 protected:

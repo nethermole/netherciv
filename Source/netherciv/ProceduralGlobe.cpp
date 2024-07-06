@@ -17,112 +17,13 @@ AProceduralGlobe::AProceduralGlobe()
 
 }
 
-void AProceduralGlobe::GenerateWorld() {
-
-	UE_LOG(LogTemp, Display, TEXT("golden ratio = %f"), UE_DOUBLE_GOLDEN_RATIO);
-
-	/*TArray<TArray<TArray<double>>> dodecahedronCartesianCoordinates =
-	{
-		{
-			{1.0, -1.0},
-			{1.0, -1.0},
-			{1.0, -1.0},
-		},
-		{
-			{0},
-			{UE_DOUBLE_GOLDEN_RATIO, -1.0 * UE_DOUBLE_GOLDEN_RATIO},
-			{1.0 / UE_DOUBLE_GOLDEN_RATIO, -1.0 * 1.0 / UE_DOUBLE_GOLDEN_RATIO},
-		},
-		{
-			{1.0 / UE_DOUBLE_GOLDEN_RATIO, -1.0 * 1.0 / UE_DOUBLE_GOLDEN_RATIO},
-			{0},
-			{UE_DOUBLE_GOLDEN_RATIO, -1.0 * UE_DOUBLE_GOLDEN_RATIO}
-		},
-		{
-			{UE_DOUBLE_GOLDEN_RATIO, -1.0 * UE_DOUBLE_GOLDEN_RATIO},
-			{1.0 / UE_DOUBLE_GOLDEN_RATIO, -1.0 * 1.0 / UE_DOUBLE_GOLDEN_RATIO},
-			{0}
-		}
-	};*/
-
-	TArray<TArray<TArray<double>>> icosahedronCartesianCoordinates =
-	{
-		{
-			{0},
-			{1.0, -1.0},
-			{UE_DOUBLE_GOLDEN_RATIO, -1.0 * UE_DOUBLE_GOLDEN_RATIO},
-		},
-		{
-			{1.0, -1.0},
-			{UE_DOUBLE_GOLDEN_RATIO, -1.0 * UE_DOUBLE_GOLDEN_RATIO},
-			{0},
-		},
-		{
-			{UE_DOUBLE_GOLDEN_RATIO, -1.0 * UE_DOUBLE_GOLDEN_RATIO},
-			{0},
-			{1.0, -1.0}
-		}
-	};
-
-	TArray<TArray<FVector>> v = {};	//vertex locations
-	TArray<vertex*> vertices = {};
-	TSet<vertex*> originalVerticies = {};
-
-	int counter = 0;
-	for (int matrix = 0; matrix < 3; matrix++) {
-		v.Add({});
-
-		TArray<double> xCoords = icosahedronCartesianCoordinates[matrix][0];
-		TArray<double> yCoords = icosahedronCartesianCoordinates[matrix][1];
-		TArray<double> zCoords = icosahedronCartesianCoordinates[matrix][2];
-
-
-		for (int x = 0; x < xCoords.Num(); x++) {
-			for (int y = 0; y < yCoords.Num(); y++) {
-				for (int z = 0; z < zCoords.Num(); z++) {
-					double xCoord = xCoords[x];
-					double yCoord = yCoords[y];
-					double zCoord = zCoords[z];
-
-					FVector verticeLocation = FVector(xCoord, yCoord, zCoord);
-					//verticeLocation = Util::RotateRelativeToVectorAndQuat(verticeLocation, FVector(0, 0, 0), FQuat(FVector::YAxisVector, FMath::DegreesToRadians(DIHEDRAL_ANGLE / 2)));
-					verticeLocation = Util::GetVectorAtDistance(verticeLocation, 1000);
-					v[matrix].Add(verticeLocation);
-
-					ASpherePoint* newSpherePoint = GetWorld()->SpawnActor<ASpherePoint>(spherePoint, FTransform(verticeLocation));
-					newSpherePoint->floatingLabel = FString::FromInt(counter);
-					counter++;
-
-					vertex* newVertex = new vertex();
-					newVertex->location = verticeLocation;
-					newVertex->name = newSpherePoint->floatingLabel;
-
-					vertices.Add(newVertex);
-					originalVerticies.Add(newVertex);
-
-					if (matrix == 0) {
-						newSpherePoint->color = FColor::Red;
-					}
-					if (matrix == 1) {
-						newSpherePoint->color = FColor::Yellow;
-					}
-					if (matrix == 2) {
-						newSpherePoint->color = FColor::Blue;
-					}
-
-					newSpherePoint->Initialize();
-				}
-			}
-		}
-
-	}
-
-	UE_LOG(LogTemp, Display, TEXT("created %d vertices"), vertices.Num());
-
-	//1) For each endpoint, create a vertex (we just did that)
+void AProceduralGlobe::GenerateWorld() 
+{
+	dcel = new DoublyConnectedEdgeList();
+	dcel->LoadIcosahedronCartesianCoordinates();
 
 	//2) For each input segment, create two half-edges, and assign their tail vertices and twins.
-	TMap<vertex*, TArray<vertex*>> adjacentVertices = GetVertexAdjacencies(vertices, originalVerticies);
+	TMap<vertex*, TArray<vertex*>> adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVerticies);
 	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(adjacentVertices);
 
 	//2a) Do subdivisions here???
@@ -150,14 +51,14 @@ void AProceduralGlobe::GenerateWorld() {
 					vertex* newVertex = new vertex();
 					newVertex->location = heMidpoint;
 					newVertex->name = newSpherePoint->floatingLabel;
-					vertices.Add(newVertex);
+					dcel->vertices.Add(newVertex);
 
 					visited.Add(halfEdgesBetweenVertices[v1][v2]);
 					visited.Add(halfEdgesBetweenVertices[v2][v1]);
 				}
 			}
 		}
-		adjacentVertices = GetVertexAdjacencies(vertices, originalVerticies);
+		adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVerticies);
 		halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(adjacentVertices);
 	}
 
@@ -165,7 +66,7 @@ void AProceduralGlobe::GenerateWorld() {
 	//4) For every pair of half-edges e1, e2 in clockwise order, assign e1->twin->next = e2 and e2->prev = e1->twin.
 	//5) Pick one of the half-edges and assign it as the representative for the endpoint. (Degenerate case: if there's only one half-edge e in the sorted list, set e->twin->next = e and e->prev = e->twin). The next pointers are a permutation on half-edges.
 
-	DoClockwiseAssignment(halfEdgesBetweenVertices, originalVerticies, false);
+	DoClockwiseAssignment(halfEdgesBetweenVertices, dcel->originalVerticies, false);
 
 	//6) For every cycle, allocate and assign a face structure.*/
 	TArray<face*> faces = GetFacesFromHalfEdges(halfEdgesBetweenVertices);
@@ -175,8 +76,8 @@ void AProceduralGlobe::GenerateWorld() {
 //Get center of adjacent faces, make new list of vertices
 	TArray<vertex*> hexGlobeVertices = {};
 	TSet<face*> visitedFaces = {};
-	for (int i = 0; i < vertices.Num(); i++) {
-		vertex* v1 = vertices[i];
+	for (int i = 0; i < dcel->vertices.Num(); i++) {
+		vertex* v1 = dcel->vertices[i];
 		TArray<face*> adjacentFaces = {};
 
 		TArray<half_edge*> halfEdgesFacingAway = {};
@@ -207,7 +108,7 @@ void AProceduralGlobe::GenerateWorld() {
 	//then do "3 adjacents" for the map
 	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies = GetHexGlobeAdjacencies(hexGlobeVertices);
 	halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(hexGlobeAdjacencies);
-	DoClockwiseAssignment(halfEdgesBetweenVertices, originalVerticies, true);
+	DoClockwiseAssignment(halfEdgesBetweenVertices, dcel->originalVerticies, true);
 	faces = GetFacesFromHalfEdges(halfEdgesBetweenVertices);
 	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), faces.Num());
 

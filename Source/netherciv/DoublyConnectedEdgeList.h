@@ -44,6 +44,10 @@ public:
 	DoublyConnectedEdgeList();
 	~DoublyConnectedEdgeList();
 
+	void LoadIcosahedronCartesianCoordinates();
+
+	TArray<vertex*> vertices;
+	TSet<vertex*> originalVerticies;
 
 	TArray<face*> faces;
 };
