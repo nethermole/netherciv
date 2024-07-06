@@ -48,8 +48,8 @@ void AProceduralGlobe::GenerateWorld()
 	TArray<vertex*> hexGlobeVertices = dcel->GenerateHexGlobeVertices();
 
 	//then do "3 adjacents" for the map
-	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies = dcel->GetHexGlobeAdjacencies(hexGlobeVertices);
-	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(hexGlobeAdjacencies);
+	dcel->hexGlobeAdjacencies = dcel->GetHexGlobeAdjacencies(hexGlobeVertices);
+	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(dcel->hexGlobeAdjacencies);
 	dcel->DoClockwiseAssignment(true);
 	faces = GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
 	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), faces.Num());

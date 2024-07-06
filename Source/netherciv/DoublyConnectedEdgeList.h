@@ -58,4 +58,6 @@ public:
 
 	TMap<vertex*, TArray<vertex*>> adjacentVertices;
 	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices;
+
+	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies;
 };
