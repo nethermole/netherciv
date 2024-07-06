@@ -8,11 +8,21 @@
 
 DoublyConnectedEdgeList::DoublyConnectedEdgeList()
 {
-	faces = {};
+}
+
+DoublyConnectedEdgeList::DoublyConnectedEdgeList(TArray<vertex*> vertices_in)
+{
+	vertices = TArray<vertex*>(vertices_in);
+	originalVertices = TSet<vertex*>(vertices_in);
 }
 
 DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
 {
+}
+
+void DoublyConnectedEdgeList::CalculateHalfEdges() {
+	adjacentVertices = GetVertexAdjacencies(vertices);
+	halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(adjacentVertices);
 }
 
 

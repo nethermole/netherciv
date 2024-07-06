@@ -42,6 +42,7 @@ class NETHERCIV_API DoublyConnectedEdgeList
 {
 public:
 	DoublyConnectedEdgeList();
+	DoublyConnectedEdgeList(TArray<vertex*> vertices_in);
 	~DoublyConnectedEdgeList();
 
 	void LoadIcosahedronCartesianCoordinates();
@@ -58,6 +59,8 @@ public:
 
 	TMap<vertex*, TArray<vertex*>> GetVertexAdjacencies(TArray<vertex*> vertices_param);
 	TMap<vertex*, TMap<vertex*, half_edge*>> GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices_param);
+
+	void CalculateHalfEdges();
 
 	void PrepareVerticeLocationsAndTriangles();
 
