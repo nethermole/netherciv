@@ -15,6 +15,109 @@ DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
 {
 }
 
+void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
+	//3) For each endpoint, sort the half-edges whose tail vertex is that endpoint in clockwise order.
+	//4) For every pair of half-edges e1, e2 in clockwise order, assign e1->twin->next = e2 and e2->prev = e1->twin.
+	//5) Pick one of the half-edges and assign it as the representative for the endpoint. (Degenerate case: if there's only one half-edge e in the sorted list, set e->twin->next = e and e->prev = e->twin). The next pointers are a permutation on half-edges.
+
+	TArray<vertex*> half_edges_by_v1 = {};
+	halfEdgesBetweenVertices.GetKeys(half_edges_by_v1);
+
+	for (int i = 0; i < half_edges_by_v1.Num(); i++) {
+		vertex* v1 = half_edges_by_v1[i];
+		UE_LOG(LogTemp, Display, TEXT("Clockwise for %s:"), *(v1->name));
+
+		int adjacentVerticeCount;
+		if (originalVertices.Contains(v1)) {
+			adjacentVerticeCount = 5;
+		}
+		else {
+			adjacentVerticeCount = 6;
+		}
+		if (isHexGlobe) {
+			adjacentVerticeCount = 3;
+		}
+
+		TArray<half_edge*> halfEdges = {};
+		halfEdgesBetweenVertices[v1].GenerateValueArray(halfEdges);
+
+		TArray<half_edge*> clockwiseEdges = {};
+
+		TMap<FVector, half_edge*> half_edges_byTwinTailVector = {};
+		//make half edges. Give them tails in clockwise order...
+		for (int j = 0; j < adjacentVerticeCount; j++) {
+			half_edge* he = halfEdges[j];
+			FVector heNormalized = FVector(he->twin->tail->location);
+			heNormalized.Normalize();
+			half_edges_byTwinTailVector.Add(heNormalized, he);
+		}
+
+		half_edge* first = halfEdges[0];
+		FVector firstNormalized = FVector(first->twin->tail->location);
+
+		clockwiseEdges.Add(first);
+		UE_LOG(LogTemp, Display, TEXT("first is %s"), *(first->name));
+
+		//get the other side vectors of the half edges
+		FVector vNormalized = FVector(v1->location);
+		vNormalized.Normalize();
+
+		//UE_LOG(LogTemp, Display, TEXT("v normalized:"));
+		//LogVector(vNormalized);
+		//UE_LOG(LogTemp, Display, TEXT("h0 normalized::"));
+		//LogVector(he0Normalized);
+		//UE_LOG(LogTemp, Display, TEXT("h1 normalized::"));
+		//LogVector(he1Normalized);
+		//UE_LOG(LogTemp, Display, TEXT("h2 normalized::"));
+		//LogVector(he2Normalized);
+
+		//get angles in clockwise order...?
+
+		for (int j = 1; j < adjacentVerticeCount; j++) {
+			TArray<FVector> halfEdgeVectors = {};
+			half_edges_byTwinTailVector.GetKeys(halfEdgeVectors);
+
+			//DEBUG HELPER: I've verified that 5 unique vectors come in
+			int degreesToRotate = j * 360 / adjacentVerticeCount;
+			UE_LOG(LogTemp, Display, TEXT("degrees to rotate: %d"), degreesToRotate);
+			FVector expectedNextVector = Util::RotateRelativeToVectorAndQuat(firstNormalized, vNormalized, FQuat(vNormalized, FMath::DegreesToRadians(degreesToRotate)));
+			expectedNextVector.Normalize();
+			UE_LOG(LogTemp, Display, TEXT("expected rotation: "));
+			Util::LogVector(expectedNextVector);
+
+			//after this for loop, closestVector is the next clockwise vector
+			double closestSoFar = 9999;	//just bigger than 360 i guess
+			FVector closestVector = FVector(0, 0, 0);	//it should never remain this, as we already added it above and are now rotating it
+			for (int k = 0; k < halfEdgeVectors.Num(); k++) {
+				FVector toMeasure = halfEdgeVectors[k];
+				double offBy = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(expectedNextVector, toMeasure)));
+
+
+				if (offBy < closestSoFar) {
+					closestSoFar = offBy;
+					closestVector = toMeasure;
+				}
+			}
+			UE_LOG(LogTemp, Display, TEXT("next clockwise is %s, off by %.6f"), *(half_edges_byTwinTailVector[closestVector]->name), closestSoFar);
+			UE_LOG(LogTemp, Display, TEXT("with vector:"));
+			Util::LogVector(closestVector);
+			clockwiseEdges.Add(half_edges_byTwinTailVector[closestVector]);
+		}
+
+
+		for (int j = 0; j < clockwiseEdges.Num(); j++) {
+			UE_LOG(LogTemp, Display, TEXT("\t%s"), *(clockwiseEdges[j]->name));
+
+			half_edge* e1 = clockwiseEdges[j];
+			half_edge* e2 = clockwiseEdges[(j + 1) % clockwiseEdges.Num()];	//math to rotate the array to 0 at end
+
+			e1->twin->next = e2;
+			e2->prev = e1->twin;
+		}
+
+	}
+}
+
 TArray<vertex*> DoublyConnectedEdgeList::GenerateHexGlobeVertices() {
 	TArray<vertex*> hexGlobeVertices = {};
 	TSet<face*> visitedFaces = {};
@@ -107,7 +210,7 @@ void DoublyConnectedEdgeList::LoadIcosahedronCartesianCoordinates() {
 	};
 
 	vertices = {};
-	originalVerticies = {};
+	originalVertices = {};
 
 	TArray<TArray<FVector>> v = {};	//vertex locations
 
@@ -142,7 +245,7 @@ void DoublyConnectedEdgeList::LoadIcosahedronCartesianCoordinates() {
 					counter++;
 
 					vertices.Add(newVertex);
-					originalVerticies.Add(newVertex);
+					originalVertices.Add(newVertex);
 
 					//if (matrix == 0) {
 					//	newSpherePoint->color = FColor::Red;

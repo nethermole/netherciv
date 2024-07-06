@@ -22,3 +22,7 @@ FVector Util::GetVectorAtDistance(FVector vector, double distance) {
 FVector Util::RotateRelativeToVectorAndQuat(FVector in, FVector rotateAround, FQuat quat) {
 	return quat.RotateVector(in - rotateAround) + rotateAround;
 }
+
+void Util::LogVector(FVector in) {
+	UE_LOG(LogTemp, Display, TEXT("%.2f,%.2f,%.2f"), in.X, in.Y, in.Z);
+}

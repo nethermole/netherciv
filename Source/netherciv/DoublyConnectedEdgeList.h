@@ -47,9 +47,11 @@ public:
 	void LoadIcosahedronCartesianCoordinates();
 	void Subdivide();
 	TArray<vertex*> GenerateHexGlobeVertices();
+	void DoClockwiseAssignment(bool isHexGlobe);
+
 
 	TArray<vertex*> vertices;
-	TSet<vertex*> originalVerticies;
+	TSet<vertex*> originalVertices;
 
 	TArray<face*> faces;
 

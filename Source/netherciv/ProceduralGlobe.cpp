@@ -23,13 +23,13 @@ void AProceduralGlobe::GenerateWorld()
 	dcel->LoadIcosahedronCartesianCoordinates();
 
 	//2) For each input segment, create two half-edges, and assign their tail vertices and twins.
-	dcel->adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVerticies);
+	dcel->adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVertices);
 	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(dcel->adjacentVertices);
 	
 	//2a) Do subdivisions here???
 	for (int subdivisions = 0; subdivisions < 2; subdivisions++) {
 		dcel->Subdivide();
-		dcel->adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVerticies);
+		dcel->adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVertices);
 		dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(dcel->adjacentVertices);
 	}
 
@@ -37,7 +37,7 @@ void AProceduralGlobe::GenerateWorld()
 	//4) For every pair of half-edges e1, e2 in clockwise order, assign e1->twin->next = e2 and e2->prev = e1->twin.
 	//5) Pick one of the half-edges and assign it as the representative for the endpoint. (Degenerate case: if there's only one half-edge e in the sorted list, set e->twin->next = e and e->prev = e->twin). The next pointers are a permutation on half-edges.
 
-	DoClockwiseAssignment(dcel->halfEdgesBetweenVertices, dcel->originalVerticies, false);
+	dcel->DoClockwiseAssignment(false);
 
 	//6) For every cycle, allocate and assign a face structure.*/
 	TArray<face*> faces = GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
@@ -50,7 +50,7 @@ void AProceduralGlobe::GenerateWorld()
 	//then do "3 adjacents" for the map
 	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies = GetHexGlobeAdjacencies(hexGlobeVertices);
 	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(hexGlobeAdjacencies);
-	DoClockwiseAssignment(dcel->halfEdgesBetweenVertices, dcel->originalVerticies, true);
+	dcel->DoClockwiseAssignment(true);
 	faces = GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
 	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), faces.Num());
 
@@ -136,112 +136,6 @@ TArray<face*> AProceduralGlobe::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*
 	return faces;
 }
 
-void AProceduralGlobe::LogVector(FVector in) {
-	UE_LOG(LogTemp, Display, TEXT("%.2f,%.2f,%.2f"), in.X, in.Y, in.Z);
-}
-
-void AProceduralGlobe::DoClockwiseAssignment(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices, TSet<vertex*> originalVertices, bool isHexGlobe) {
-//3) For each endpoint, sort the half-edges whose tail vertex is that endpoint in clockwise order.
-//4) For every pair of half-edges e1, e2 in clockwise order, assign e1->twin->next = e2 and e2->prev = e1->twin.
-//5) Pick one of the half-edges and assign it as the representative for the endpoint. (Degenerate case: if there's only one half-edge e in the sorted list, set e->twin->next = e and e->prev = e->twin). The next pointers are a permutation on half-edges.
-
-	TArray<vertex*> vertices = {};
-	halfEdgesBetweenVertices.GetKeys(vertices);
-
-	for (int i = 0; i < vertices.Num(); i++) {
-		vertex* v1 = vertices[i];
-		UE_LOG(LogTemp, Display, TEXT("Clockwise for %s:"), *(v1->name));
-
-		int adjacentVerticeCount;
-		if (originalVertices.Contains(v1)) {
-			adjacentVerticeCount = 5;
-		}
-		else {
-			adjacentVerticeCount = 6;
-		}
-		if (isHexGlobe) {
-			adjacentVerticeCount = 3;
-		}
-
-		TArray<half_edge*> halfEdges = {};
-		halfEdgesBetweenVertices[v1].GenerateValueArray(halfEdges);
-
-		TArray<half_edge*> clockwiseEdges = {};
-
-		TMap<FVector, half_edge*> half_edges_byTwinTailVector = {};
-		//make half edges. Give them tails in clockwise order...
-		for (int j = 0; j < adjacentVerticeCount; j++) {
-			half_edge* he = halfEdges[j];
-			FVector heNormalized = FVector(he->twin->tail->location);
-			heNormalized.Normalize();
-			half_edges_byTwinTailVector.Add(heNormalized, he);
-		}
-
-		half_edge* first = halfEdges[0];
-		FVector firstNormalized = FVector(first->twin->tail->location);
-
-		clockwiseEdges.Add(first);
-		UE_LOG(LogTemp, Display, TEXT("first is %s"), *(first->name));
-
-		//get the other side vectors of the half edges
-		FVector vNormalized = FVector(v1->location);
-		vNormalized.Normalize();
-
-		//UE_LOG(LogTemp, Display, TEXT("v normalized:"));
-		//LogVector(vNormalized);
-		//UE_LOG(LogTemp, Display, TEXT("h0 normalized::"));
-		//LogVector(he0Normalized);
-		//UE_LOG(LogTemp, Display, TEXT("h1 normalized::"));
-		//LogVector(he1Normalized);
-		//UE_LOG(LogTemp, Display, TEXT("h2 normalized::"));
-		//LogVector(he2Normalized);
-
-		//get angles in clockwise order...?
-
-		for (int j = 1; j < adjacentVerticeCount; j++) {
-			TArray<FVector> halfEdgeVectors = {};
-			half_edges_byTwinTailVector.GetKeys(halfEdgeVectors);
-
-			//DEBUG HELPER: I've verified that 5 unique vectors come in
-			int degreesToRotate = j * 360 / adjacentVerticeCount;
-			UE_LOG(LogTemp, Display, TEXT("degrees to rotate: %d"), degreesToRotate);
-			FVector expectedNextVector = Util::RotateRelativeToVectorAndQuat(firstNormalized, vNormalized, FQuat(vNormalized, FMath::DegreesToRadians(degreesToRotate)));
-			expectedNextVector.Normalize();
-			UE_LOG(LogTemp, Display, TEXT("expected rotation: "));
-			LogVector(expectedNextVector);
-
-			//after this for loop, closestVector is the next clockwise vector
-			double closestSoFar = 9999;	//just bigger than 360 i guess
-			FVector closestVector = FVector(0,0,0);	//it should never remain this, as we already added it above and are now rotating it
-			for (int k = 0; k < halfEdgeVectors.Num(); k++) {
-				FVector toMeasure = halfEdgeVectors[k];
-				double offBy = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(expectedNextVector, toMeasure)));
-
-
-				if (offBy < closestSoFar) {
-					closestSoFar = offBy;
-					closestVector = toMeasure;
-				}
-			}
-			UE_LOG(LogTemp, Display, TEXT("next clockwise is %s, off by %.6f"), *(half_edges_byTwinTailVector[closestVector]->name), closestSoFar);
-			UE_LOG(LogTemp, Display, TEXT("with vector:"));
-			LogVector(closestVector);
-			clockwiseEdges.Add(half_edges_byTwinTailVector[closestVector]);
-		}
-
-
-		for (int j = 0; j < clockwiseEdges.Num(); j++) {
-			UE_LOG(LogTemp, Display, TEXT("\t%s"), *(clockwiseEdges[j]->name));
-
-			half_edge* e1 = clockwiseEdges[j];
-			half_edge* e2 = clockwiseEdges[(j+1) % clockwiseEdges.Num()];	//math to rotate the array to 0 at end
-
-			e1->twin->next = e2;
-			e2->prev = e1->twin;
-		}
-
-	}
-}
 
 TMap<vertex*, TMap<vertex*, half_edge*>> AProceduralGlobe::GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices) {
 	TArray<vertex*> vertices = {};
