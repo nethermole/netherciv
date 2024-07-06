@@ -25,11 +25,11 @@ public:
 	void GenerateWorld();
 
 
+	void CreateGlobeDcel(int subdivisions);
 
 
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TSubclassOf<ASpherePoint> spherePoint;
+	//UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	//TSubclassOf<ASpherePoint> spherePoint;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<FVector> verticeLocations;

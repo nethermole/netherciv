@@ -19,12 +19,20 @@ AProceduralGlobe::AProceduralGlobe()
 
 void AProceduralGlobe::GenerateWorld() 
 {
+	CreateGlobeDcel(2);
+
+	verticeLocations = dcel->verticeLocations;
+	triangles = dcel->triangles;
+}
+
+void AProceduralGlobe::CreateGlobeDcel(int subdivisions)
+{
 	dcel = new DoublyConnectedEdgeList();
 	dcel->LoadIcosahedronCartesianCoordinates();
 	dcel->CalculateHalfEdges();
-	
+
 	//2a) Do subdivisions here???
-	for (int subdivisions = 0; subdivisions < 2; subdivisions++) {
+	for (int subdivCount = 0; subdivCount < subdivisions; subdivCount++) {
 		dcel->Subdivide();
 		dcel->CalculateHalfEdges();
 	}
@@ -33,7 +41,7 @@ void AProceduralGlobe::GenerateWorld()
 	dcel->GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
 
 
-//Get center of adjacent faces, make new list of vertices
+	//Get center of adjacent faces, make new list of vertices
 	dcel->hexGlobeVertices = dcel->GenerateHexGlobeVertices();
 
 	//then do "3 adjacents" for the map
@@ -44,12 +52,11 @@ void AProceduralGlobe::GenerateWorld()
 	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), dcel->faces.Num());
 
 
-//Prepare verticesLocations and triangles
+	//Prepare verticesLocations and triangles
 	dcel->PrepareVerticeLocationsAndTriangles();
-
-	verticeLocations = dcel->verticeLocations;
-	triangles = dcel->triangles;
 }
+
+
 
 
 
