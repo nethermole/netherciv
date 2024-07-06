@@ -56,8 +56,10 @@ public:
 	static TArray<half_edge*>  CreateHalfEdges(vertex* v1, vertex* v2);
 
 
-	TMap<vertex*, TArray<vertex*>> GetVertexAdjacencies(TArray<vertex*> vertices);
+	TMap<vertex*, TArray<vertex*>> GetVertexAdjacencies(TArray<vertex*> vertices_param);
+	TMap<vertex*, TMap<vertex*, half_edge*>> GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices_param);
 
+	void PrepareVerticeLocationsAndTriangles();
 
 	TArray<vertex*> vertices;
 	TSet<vertex*> originalVertices;
@@ -69,4 +71,7 @@ public:
 
 	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies;
 	TArray<vertex*> hexGlobeVertices;
+
+	TArray<FVector> verticeLocations;
+	TArray<int> triangles;
 };

@@ -16,6 +16,76 @@ DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
 }
 
 
+void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
+{
+	verticeLocations = {};
+	for (int i = 0; i < hexGlobeVertices.Num(); i++) {
+		hexGlobeVertices[i]->verticesIndex = i;
+		verticeLocations.Add(hexGlobeVertices[i]->location);
+	}
+
+	triangles = {};
+	for (int f = 0; f < faces.Num(); f++) {
+		face* faceRef = faces[f];
+		if (faceRef->reps.Num() == 3) {
+			triangles.Append({
+				faceRef->reps[0]->tail->verticesIndex,
+				faceRef->reps[1]->tail->verticesIndex,
+				faceRef->reps[2]->tail->verticesIndex
+				});
+		}
+		else {
+			FVector midpoint = FVector(0, 0, 0);
+			for (int i = 0; i < faceRef->reps.Num(); i++) {
+				midpoint += faceRef->reps[i]->tail->location;
+			}
+			midpoint /= faceRef->reps.Num();
+			verticeLocations.Add(midpoint);
+
+			for (int i = 0; i < faceRef->reps.Num(); i++) {
+				half_edge* edge = faceRef->reps[i];
+
+				triangles.Append({
+					edge->tail->verticesIndex,
+					edge->next->tail->verticesIndex,
+				verticeLocations.Num() - 1
+					});
+			}
+		}
+	}
+}
+
+
+TMap<vertex*, TMap<vertex*, half_edge*>> DoublyConnectedEdgeList::GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices_param) {
+	TArray<vertex*> adjacentVertices_vertices = {};
+	adjacentVertices_param.GetKeys(adjacentVertices_vertices);
+
+	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices_var = {};
+	for (int i = 0; i < adjacentVertices_vertices.Num(); i++) {
+		vertex* v1 = adjacentVertices_vertices[i];
+		if (!halfEdgesBetweenVertices_var.Contains(v1)) {
+			halfEdgesBetweenVertices_var.Add(v1, {});
+		}
+
+		for (int j = 0; j < adjacentVertices_param[v1].Num(); j++) {
+			vertex* v2 = adjacentVertices_param[v1][j];
+
+			if (!halfEdgesBetweenVertices_var[v1].Contains(v2)) {
+				if (!halfEdgesBetweenVertices_var.Contains(v2)) {
+					halfEdgesBetweenVertices_var.Add(v2, {});
+				}
+
+				TArray<half_edge*> newHalfEdges = DoublyConnectedEdgeList::CreateHalfEdges(v1, v2);
+
+				halfEdgesBetweenVertices_var[v1].Add(v2, newHalfEdges[0]);
+				halfEdgesBetweenVertices_var[v2].Add(v1, newHalfEdges[1]);
+			}
+		}
+	}
+	return halfEdgesBetweenVertices_var;
+}
+
+
 TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TArray<vertex*> vertices_param) {
 	TMap<vertex*, TArray<vertex*>> adjacencies = {};
 
