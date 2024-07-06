@@ -15,6 +15,45 @@ DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
 {
 }
 
+
+TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TArray<vertex*> vertices_param) {
+	TMap<vertex*, TArray<vertex*>> adjacencies = {};
+
+	for (int i = 0; i < vertices_param.Num(); i++) {
+		vertex* v1 = vertices_param[i];
+
+		TMap<vertex*, double> edgeDistances = {};
+		for (int j = 0; j < vertices_param.Num(); j++) {
+			if (j != i) {
+				vertex* v2 = vertices_param[j];
+				double distance = (v1->location - v2->location).Length();
+				edgeDistances.Add(v2, distance);
+			}
+		}
+
+		edgeDistances.ValueSort([](double val1, double val2) {return val1 - val2 < 0; });
+		TArray<vertex*> edgesByDist = {};
+		edgeDistances.GenerateKeyArray(edgesByDist);
+
+		int adjacentVerticeCount;
+		if (originalVertices.Contains(v1)) {
+			adjacentVerticeCount = 5;
+		}
+		else {
+			adjacentVerticeCount = 6;
+		}
+
+		TArray<vertex*> adjacentVerts = {};
+		for (int j = 0; j < adjacentVerticeCount; j++) {
+			adjacentVerts.Add(edgesByDist[j]);
+		}
+		adjacencies.Add(v1, adjacentVerts);
+	}
+
+	return adjacencies;
+}
+
+
 TArray<half_edge*> DoublyConnectedEdgeList::CreateHalfEdges(vertex* vert1, vertex* vert2) {
 	half_edge* e1 = new half_edge();
 	half_edge* e2 = new half_edge();

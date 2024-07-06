@@ -56,6 +56,9 @@ public:
 	static TArray<half_edge*>  CreateHalfEdges(vertex* v1, vertex* v2);
 
 
+	TMap<vertex*, TArray<vertex*>> GetVertexAdjacencies(TArray<vertex*> vertices);
+
+
 	TArray<vertex*> vertices;
 	TSet<vertex*> originalVertices;
 

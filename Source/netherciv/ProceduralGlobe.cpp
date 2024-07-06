@@ -23,13 +23,13 @@ void AProceduralGlobe::GenerateWorld()
 	dcel->LoadIcosahedronCartesianCoordinates();
 
 	//2) For each input segment, create two half-edges, and assign their tail vertices and twins.
-	dcel->adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVertices);
+	dcel->adjacentVertices = dcel->GetVertexAdjacencies(dcel->vertices);
 	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(dcel->adjacentVertices);
 	
 	//2a) Do subdivisions here???
 	for (int subdivisions = 0; subdivisions < 2; subdivisions++) {
 		dcel->Subdivide();
-		dcel->adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVertices);
+		dcel->adjacentVertices = dcel->GetVertexAdjacencies(dcel->vertices);
 		dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(dcel->adjacentVertices);
 	}
 
@@ -122,44 +122,6 @@ TMap<vertex*, TMap<vertex*, half_edge*>> AProceduralGlobe::GetHalfEdgesBetweenVe
 	}
 	return halfEdgesBetweenVertices;
 }
-
-TMap<vertex*, TArray<vertex*>> AProceduralGlobe::GetVertexAdjacencies(TArray<vertex*> vertices, TSet<vertex*> originalVertices) {
-	TMap<vertex*, TArray<vertex*>> adjacencies = {};
-
-	for (int i = 0; i < vertices.Num(); i++) {
-		vertex* v1 = vertices[i];
-
-		TMap<vertex*, double> edgeDistances = {};
-		for (int j = 0;j < vertices.Num(); j++) {
-			if (j != i) {
-				vertex* v2 = vertices[j];
-				double distance = (v1->location - v2->location).Length();
-				edgeDistances.Add(v2, distance);
-			}
-		}
-
-		edgeDistances.ValueSort([](double val1, double val2) {return val1 - val2 < 0; });
-		TArray<vertex*> edgesByDist = {};
-		edgeDistances.GenerateKeyArray(edgesByDist);
-
-		int adjacentVerticeCount;
-		if (originalVertices.Contains(v1)) {
-			adjacentVerticeCount = 5;
-		}
-		else {
-			adjacentVerticeCount = 6;
-		}
-
-		TArray<vertex*> adjacentVerts = {};
-		for (int j = 0; j < adjacentVerticeCount; j++) {
-			adjacentVerts.Add(edgesByDist[j]);
-		}
-		adjacencies.Add(v1, adjacentVerts);
-	}
-	
-	return adjacencies;
-}
-
 
 
 
