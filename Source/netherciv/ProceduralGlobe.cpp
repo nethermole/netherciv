@@ -23,53 +23,24 @@ void AProceduralGlobe::GenerateWorld()
 	dcel->LoadIcosahedronCartesianCoordinates();
 
 	//2) For each input segment, create two half-edges, and assign their tail vertices and twins.
-	TMap<vertex*, TArray<vertex*>> adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVerticies);
-	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(adjacentVertices);
-
+	dcel->adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVerticies);
+	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(dcel->adjacentVertices);
+	
 	//2a) Do subdivisions here???
-	for (int subdivisions = 0; subdivisions < 4; subdivisions++) {
-		int midpointCounter = 0;
-		TSet<half_edge*> visited = {};
-		TArray<vertex*> v1s = {};
-		halfEdgesBetweenVertices.GetKeys(v1s);
-		for (int i = 0; i < v1s.Num(); i++) {
-			vertex* v1 = v1s[i];
-
-			TArray<vertex*> v2s = {};
-			halfEdgesBetweenVertices[v1].GetKeys(v2s);
-			for (int j = 0; j < v2s.Num(); j++) {
-				vertex* v2 = v2s[j];
-				if (!visited.Contains(halfEdgesBetweenVertices[v1][v2])) {
-					FVector heMidpoint = (v1->location + v2->location) / 2;
-					heMidpoint = Util::GetVectorAtDistance(heMidpoint, v1->location.Length());
-
-					ASpherePoint* newSpherePoint = GetWorld()->SpawnActor<ASpherePoint>(spherePoint, FTransform(heMidpoint));
-					newSpherePoint->floatingLabel = "m" + FString::FromInt(midpointCounter);
-					newSpherePoint->Initialize();
-					midpointCounter++;
-
-					vertex* newVertex = new vertex();
-					newVertex->location = heMidpoint;
-					newVertex->name = newSpherePoint->floatingLabel;
-					dcel->vertices.Add(newVertex);
-
-					visited.Add(halfEdgesBetweenVertices[v1][v2]);
-					visited.Add(halfEdgesBetweenVertices[v2][v1]);
-				}
-			}
-		}
-		adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVerticies);
-		halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(adjacentVertices);
+	for (int subdivisions = 0; subdivisions < 2; subdivisions++) {
+		dcel->Subdivide();
+		dcel->adjacentVertices = GetVertexAdjacencies(dcel->vertices, dcel->originalVerticies);
+		dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(dcel->adjacentVertices);
 	}
 
 	//3) For each endpoint, sort the half-edges whose tail vertex is that endpoint in clockwise order.
 	//4) For every pair of half-edges e1, e2 in clockwise order, assign e1->twin->next = e2 and e2->prev = e1->twin.
 	//5) Pick one of the half-edges and assign it as the representative for the endpoint. (Degenerate case: if there's only one half-edge e in the sorted list, set e->twin->next = e and e->prev = e->twin). The next pointers are a permutation on half-edges.
 
-	DoClockwiseAssignment(halfEdgesBetweenVertices, dcel->originalVerticies, false);
+	DoClockwiseAssignment(dcel->halfEdgesBetweenVertices, dcel->originalVerticies, false);
 
 	//6) For every cycle, allocate and assign a face structure.*/
-	TArray<face*> faces = GetFacesFromHalfEdges(halfEdgesBetweenVertices);
+	TArray<face*> faces = GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
 	UE_LOG(LogTemp, Display, TEXT("faces total = %d"), faces.Num());
 
 
@@ -81,7 +52,7 @@ void AProceduralGlobe::GenerateWorld()
 		TArray<face*> adjacentFaces = {};
 
 		TArray<half_edge*> halfEdgesFacingAway = {};
-		halfEdgesBetweenVertices[v1].GenerateValueArray(halfEdgesFacingAway);
+		dcel->halfEdgesBetweenVertices[v1].GenerateValueArray(halfEdgesFacingAway);
 		for (int j = 0; j < halfEdgesFacingAway.Num(); j++) {
 			if (!visitedFaces.Contains(halfEdgesFacingAway[j]->left)) {
 				visitedFaces.Add(halfEdgesFacingAway[j]->left);
@@ -107,9 +78,9 @@ void AProceduralGlobe::GenerateWorld()
 	}
 	//then do "3 adjacents" for the map
 	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies = GetHexGlobeAdjacencies(hexGlobeVertices);
-	halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(hexGlobeAdjacencies);
-	DoClockwiseAssignment(halfEdgesBetweenVertices, dcel->originalVerticies, true);
-	faces = GetFacesFromHalfEdges(halfEdgesBetweenVertices);
+	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(hexGlobeAdjacencies);
+	DoClockwiseAssignment(dcel->halfEdgesBetweenVertices, dcel->originalVerticies, true);
+	faces = GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
 	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), faces.Num());
 
 

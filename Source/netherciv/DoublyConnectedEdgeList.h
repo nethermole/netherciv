@@ -45,9 +45,13 @@ public:
 	~DoublyConnectedEdgeList();
 
 	void LoadIcosahedronCartesianCoordinates();
+	void Subdivide();
 
 	TArray<vertex*> vertices;
 	TSet<vertex*> originalVerticies;
 
 	TArray<face*> faces;
+
+	TMap<vertex*, TArray<vertex*>> adjacentVertices;
+	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices;
 };

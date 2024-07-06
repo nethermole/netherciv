@@ -15,6 +15,42 @@ DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
 {
 }
 
+void DoublyConnectedEdgeList::Subdivide() {
+	int midpointCounter = 0;
+	TSet<half_edge*> visited = {};
+
+	TArray<vertex*> v1s = {};
+	halfEdgesBetweenVertices.GetKeys(v1s);
+	for (int i = 0; i < v1s.Num(); i++) {
+		vertex* v1 = v1s[i];
+
+		TArray<vertex*> v2s = {};
+		halfEdgesBetweenVertices[v1].GetKeys(v2s);
+		for (int j = 0; j < v2s.Num(); j++) {
+			vertex* v2 = v2s[j];
+			if (!visited.Contains(halfEdgesBetweenVertices[v1][v2])) {
+				FVector heMidpoint = (v1->location + v2->location) / 2;
+				heMidpoint = Util::GetVectorAtDistance(heMidpoint, v1->location.Length());
+
+				//ASpherePoint* newSpherePoint = GetWorld()->SpawnActor<ASpherePoint>(spherePoint, FTransform(heMidpoint));
+				//newSpherePoint->floatingLabel = "m" + FString::FromInt(midpointCounter);
+				//newSpherePoint->Initialize();
+				
+
+				vertex* newVertex = new vertex();
+				newVertex->location = heMidpoint;
+				newVertex->name = "m" + FString::FromInt(midpointCounter);
+				vertices.Add(newVertex);
+
+				midpointCounter++;
+
+				visited.Add(halfEdgesBetweenVertices[v1][v2]);
+				visited.Add(halfEdgesBetweenVertices[v2][v1]);
+			}
+		}
+	}
+}
+
 void DoublyConnectedEdgeList::LoadIcosahedronCartesianCoordinates() {
 	TArray<TArray<TArray<double>>> icosahedronCartesianCoordinates =
 	{

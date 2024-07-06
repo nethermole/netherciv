@@ -50,8 +50,6 @@ public:
 
 	DoublyConnectedEdgeList* dcel;
 
-	void LoadIcosahedronCartesianCoordinates();
-
 
 protected:
 	// Called when the game starts or when spawned
