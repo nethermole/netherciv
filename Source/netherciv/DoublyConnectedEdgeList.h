@@ -26,7 +26,7 @@ struct face {
 };
 
 struct vertex {
-	struct half_edge* rep;  /* rep->tail == this */
+	struct half_edge* rep;  /* rep->tail == this */		//we are only tracking one half edge per vertex, but n vertices may have this vertex as its tail
 	FVector location;
 	FString name;
 

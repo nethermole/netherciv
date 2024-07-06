@@ -132,6 +132,7 @@ TArray<half_edge*> DoublyConnectedEdgeList::CreateHalfEdges(vertex* vert1, verte
 	half_edge* e1 = new half_edge();
 	half_edge* e2 = new half_edge();
 
+	//Pick one of the half - edges and assign it as the representative for the endpoint.
 	vert1->rep = e1;
 	vert2->rep = e2;
 
