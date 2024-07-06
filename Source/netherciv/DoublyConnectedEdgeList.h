@@ -42,7 +42,6 @@ class NETHERCIV_API DoublyConnectedEdgeList
 {
 public:
 	DoublyConnectedEdgeList();
-	DoublyConnectedEdgeList(TArray<vertex*> vertices_in);
 	~DoublyConnectedEdgeList();
 
 	void LoadIcosahedronCartesianCoordinates();

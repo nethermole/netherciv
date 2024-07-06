@@ -10,12 +10,6 @@ DoublyConnectedEdgeList::DoublyConnectedEdgeList()
 {
 }
 
-DoublyConnectedEdgeList::DoublyConnectedEdgeList(TArray<vertex*> vertices_in)
-{
-	vertices = TArray<vertex*>(vertices_in);
-	originalVertices = TSet<vertex*>(vertices_in);
-}
-
 DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
 {
 }
