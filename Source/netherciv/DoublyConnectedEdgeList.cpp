@@ -15,6 +15,37 @@ DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
 {
 }
 
+TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices_param) {
+	TMap<vertex*, TArray<vertex*>> adjacencies = {};
+
+	for (int i = 0; i < hexGlobeVertices_param.Num(); i++) {
+		vertex* v1 = hexGlobeVertices_param[i];
+
+		TMap<vertex*, double> edgeDistances = {};
+		for (int j = 0; j < hexGlobeVertices_param.Num(); j++) {
+			if (j != i) {
+				vertex* v2 = hexGlobeVertices_param[j];
+				double distance = (v1->location - v2->location).Length();
+				edgeDistances.Add(v2, distance);
+			}
+		}
+
+		edgeDistances.ValueSort([](double val1, double val2) {return val1 - val2 < 0; });
+		TArray<vertex*> edgesByDist = {};
+		edgeDistances.GenerateKeyArray(edgesByDist);
+
+		int adjacentVerticeCount = 3;
+
+		TArray<vertex*> adjacentVerts = {};
+		for (int j = 0; j < adjacentVerticeCount; j++) {
+			adjacentVerts.Add(edgesByDist[j]);
+		}
+		adjacencies.Add(v1, adjacentVerts);
+	}
+
+	return adjacencies;
+}
+
 void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 	//3) For each endpoint, sort the half-edges whose tail vertex is that endpoint in clockwise order.
 	//4) For every pair of half-edges e1, e2 in clockwise order, assign e1->twin->next = e2 and e2->prev = e1->twin.

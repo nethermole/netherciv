@@ -32,7 +32,7 @@ public:
 
 	TArray<face*> GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices);
 
-	TMap<vertex*, TArray<vertex*>> GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices);
+	TMap<vertex*, TArray<vertex*>> GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices_param);
 
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)

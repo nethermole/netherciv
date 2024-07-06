@@ -49,6 +49,7 @@ public:
 	TArray<vertex*> GenerateHexGlobeVertices();
 	void DoClockwiseAssignment(bool isHexGlobe);
 
+	TMap<vertex*, TArray<vertex*>> GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices_param);
 
 	TArray<vertex*> vertices;
 	TSet<vertex*> originalVertices;

@@ -48,7 +48,7 @@ void AProceduralGlobe::GenerateWorld()
 	TArray<vertex*> hexGlobeVertices = dcel->GenerateHexGlobeVertices();
 
 	//then do "3 adjacents" for the map
-	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies = GetHexGlobeAdjacencies(hexGlobeVertices);
+	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies = dcel->GetHexGlobeAdjacencies(hexGlobeVertices);
 	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(hexGlobeAdjacencies);
 	dcel->DoClockwiseAssignment(true);
 	faces = GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
@@ -203,36 +203,6 @@ TMap<vertex*, TArray<vertex*>> AProceduralGlobe::GetVertexAdjacencies(TArray<ver
 	return adjacencies;
 }
 
-TMap<vertex*, TArray<vertex*>> AProceduralGlobe::GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices) {
-	TMap<vertex*, TArray<vertex*>> adjacencies = {};
-
-	for (int i = 0; i < hexGlobeVertices.Num(); i++) {
-		vertex* v1 = hexGlobeVertices[i];
-
-		TMap<vertex*, double> edgeDistances = {};
-		for (int j = 0; j < hexGlobeVertices.Num(); j++) {
-			if (j != i) {
-				vertex* v2 = hexGlobeVertices[j];
-				double distance = (v1->location - v2->location).Length();
-				edgeDistances.Add(v2, distance);
-			}
-		}
-
-		edgeDistances.ValueSort([](double val1, double val2) {return val1 - val2 < 0; });
-		TArray<vertex*> edgesByDist = {};
-		edgeDistances.GenerateKeyArray(edgesByDist);
-
-		int adjacentVerticeCount = 3;
-
-		TArray<vertex*> adjacentVerts = {};
-		for (int j = 0; j < adjacentVerticeCount; j++) {
-			adjacentVerts.Add(edgesByDist[j]);
-		}
-		adjacencies.Add(v1, adjacentVerts);
-	}
-
-	return adjacencies;
-}
 
 TArray<half_edge*> AProceduralGlobe::CreateHalfEdges(vertex* vert1, vertex* vert2) {
 	half_edge* e1 = new half_edge();
