@@ -45,37 +45,8 @@ void AProceduralGlobe::GenerateWorld()
 
 
 //Get center of adjacent faces, make new list of vertices
-	TArray<vertex*> hexGlobeVertices = {};
-	TSet<face*> visitedFaces = {};
-	for (int i = 0; i < dcel->vertices.Num(); i++) {
-		vertex* v1 = dcel->vertices[i];
-		TArray<face*> adjacentFaces = {};
+	TArray<vertex*> hexGlobeVertices = dcel->GenerateHexGlobeVertices();
 
-		TArray<half_edge*> halfEdgesFacingAway = {};
-		dcel->halfEdgesBetweenVertices[v1].GenerateValueArray(halfEdgesFacingAway);
-		for (int j = 0; j < halfEdgesFacingAway.Num(); j++) {
-			if (!visitedFaces.Contains(halfEdgesFacingAway[j]->left)) {
-				visitedFaces.Add(halfEdgesFacingAway[j]->left);
-
-				adjacentFaces.Add(halfEdgesFacingAway[j]->left);
-			}
-		}
-
-		for (int j = 0; j < adjacentFaces.Num(); j++) {
-			face* adjacentFace = adjacentFaces[j];
-			FVector center = FVector(0, 0, 0);
-			for (int k = 0; k < adjacentFace->reps.Num(); k++) {
-				center = center + adjacentFace->reps[k]->tail->location;
-			}
-			center /= adjacentFace->reps.Num();
-
-			vertex* hexGlobeVertex = new vertex();
-			hexGlobeVertex->location = center;
-			hexGlobeVertex->name = adjacentFace->name;
-
-			hexGlobeVertices.Add(hexGlobeVertex);
-		}
-	}
 	//then do "3 adjacents" for the map
 	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies = GetHexGlobeAdjacencies(hexGlobeVertices);
 	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(hexGlobeAdjacencies);
