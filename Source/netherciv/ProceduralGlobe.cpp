@@ -51,16 +51,17 @@ void AProceduralGlobe::CreateGlobeDcel(int subdivisions)
 	dcel->GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);	//5
 
 //To hexes
+	//dcel = dcel->CreateGoldbergPolyhedronFromSubdividedIcosahedron();
 	//Get center of adjacent faces, make new list of vertices for the hex globe
-	dcel->hexGlobeVertices = dcel->GenerateHexGlobeVertices();
+	TArray<vertex*> hexGlobeVertices = dcel->GenerateHexGlobeVertices();
 
 	DoublyConnectedEdgeList* hexDcel = new DoublyConnectedEdgeList();
-	hexDcel->hexGlobeVertices = dcel->hexGlobeVertices;
+	hexDcel->vertices = hexGlobeVertices;
 	hexDcel->originalVertices = dcel->originalVertices;
 
 	//calculate half edges
-	hexDcel->hexGlobeAdjacencies = hexDcel->GetHexGlobeAdjacencies(hexDcel->hexGlobeVertices);
-	hexDcel->halfEdgesBetweenVertices = hexDcel->GetHalfEdgesBetweenVertices(hexDcel->hexGlobeAdjacencies);
+	hexDcel->adjacentVertices = hexDcel->GetHexGlobeAdjacencies(hexDcel->vertices);
+	hexDcel->halfEdgesBetweenVertices = hexDcel->GetHalfEdgesBetweenVertices(hexDcel->adjacentVertices);
 
 	hexDcel->DoClockwiseAssignment(true);
 	hexDcel->GetFacesFromHalfEdges(hexDcel->halfEdgesBetweenVertices);

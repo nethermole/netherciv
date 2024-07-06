@@ -23,9 +23,9 @@ void DoublyConnectedEdgeList::CalculateHalfEdges() {
 void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 {
 	verticeLocations = {};
-	for (int i = 0; i < hexGlobeVertices.Num(); i++) {
-		hexGlobeVertices[i]->verticesIndex = i;
-		verticeLocations.Add(hexGlobeVertices[i]->location);
+	for (int i = 0; i < vertices.Num(); i++) {
+		vertices[i]->verticesIndex = i;
+		verticeLocations.Add(vertices[i]->location);
 	}
 
 	triangles = {};

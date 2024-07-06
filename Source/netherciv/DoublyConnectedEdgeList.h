@@ -44,6 +44,8 @@ public:
 	DoublyConnectedEdgeList();
 	~DoublyConnectedEdgeList();
 
+	DoublyConnectedEdgeList CreateGoldbergPolyhedronFromSubdividedIcosahedron();
+
 	void LoadIcosahedronCartesianCoordinates();
 	void Subdivide();
 	TArray<vertex*> GenerateHexGlobeVertices();
@@ -70,9 +72,6 @@ public:
 
 	TMap<vertex*, TArray<vertex*>> adjacentVertices;
 	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices;
-
-	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies;
-	TArray<vertex*> hexGlobeVertices;
 
 	TArray<FVector> verticeLocations;
 	TArray<int> triangles;
