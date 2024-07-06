@@ -15,6 +15,66 @@ DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
 {
 }
 
+TArray<half_edge*> DoublyConnectedEdgeList::CreateHalfEdges(vertex* vert1, vertex* vert2) {
+	half_edge* e1 = new half_edge();
+	half_edge* e2 = new half_edge();
+
+	vert1->rep = e1;
+	vert2->rep = e2;
+
+	e1->tail = vert1;
+	e2->tail = vert2;
+	e1->twin = e2;
+	e2->twin = e1;
+
+	e1->name = e1->twin->tail->name;
+	e2->name = e2->twin->tail->name;
+
+	UE_LOG(LogTemp, Display, TEXT("creating half_edge with name %s"), *(e1->name));
+	UE_LOG(LogTemp, Display, TEXT("creating half_edge with name %s"), *(e2->name));
+
+	return { e1, e2 };
+}
+
+void DoublyConnectedEdgeList::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices_param) {
+	TArray<half_edge*> allHalfEdges = {};
+
+	//populateAll HalfEdges, effectively unpacking the nested map
+	TArray<vertex*> outerKeys = {};
+	halfEdgesBetweenVertices_param.GetKeys(outerKeys);
+	for (int i = 0; i < outerKeys.Num(); i++) {
+		vertex* outerKey = outerKeys[i];
+		TArray<half_edge*> halfEdges = {};
+		halfEdgesBetweenVertices_param[outerKey].GenerateValueArray(halfEdges);
+		allHalfEdges.Append(halfEdges);
+	}
+
+	faces = {};
+	TSet<half_edge*> visitedEdges = {};
+
+	for (int i = 0; i < allHalfEdges.Num(); i++) {
+		if (!visitedEdges.Contains(allHalfEdges[i])) {
+			half_edge* current_edge = allHalfEdges[i];
+
+			face* newFace = new face();
+			newFace->reps = {};
+			newFace->name = "";
+
+			while (!visitedEdges.Contains(current_edge)) {
+				newFace->name += current_edge->name;
+
+				newFace->reps.Add(current_edge);
+				current_edge->left = newFace;
+				visitedEdges.Add(current_edge);
+
+				current_edge = current_edge->next;
+			}
+
+			faces.Add(newFace);
+		}
+	}
+}
+
 TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices_param) {
 	TMap<vertex*, TArray<vertex*>> adjacencies = {};
 
@@ -150,7 +210,7 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 }
 
 TArray<vertex*> DoublyConnectedEdgeList::GenerateHexGlobeVertices() {
-	TArray<vertex*> hexGlobeVertices = {};
+	TArray<vertex*> newHexGlobeVertices = {};
 	TSet<face*> visitedFaces = {};
 	for (int i = 0; i < vertices.Num(); i++) {
 		vertex* v1 = vertices[i];
@@ -178,10 +238,10 @@ TArray<vertex*> DoublyConnectedEdgeList::GenerateHexGlobeVertices() {
 			hexGlobeVertex->location = center;
 			hexGlobeVertex->name = adjacentFace->name;
 
-			hexGlobeVertices.Add(hexGlobeVertex);
+			newHexGlobeVertices.Add(hexGlobeVertex);
 		}
 	}
-	return hexGlobeVertices;
+	return newHexGlobeVertices;
 }
 
 void DoublyConnectedEdgeList::Subdivide() {

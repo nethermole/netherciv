@@ -51,6 +51,11 @@ public:
 
 	TMap<vertex*, TArray<vertex*>> GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices_param);
 
+	void GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices_param);
+
+	static TArray<half_edge*>  CreateHalfEdges(vertex* v1, vertex* v2);
+
+
 	TArray<vertex*> vertices;
 	TSet<vertex*> originalVertices;
 
@@ -60,4 +65,5 @@ public:
 	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices;
 
 	TMap<vertex*, TArray<vertex*>> hexGlobeAdjacencies;
+	TArray<vertex*> hexGlobeVertices;
 };

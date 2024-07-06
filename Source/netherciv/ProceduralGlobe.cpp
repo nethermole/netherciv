@@ -40,31 +40,31 @@ void AProceduralGlobe::GenerateWorld()
 	dcel->DoClockwiseAssignment(false);
 
 	//6) For every cycle, allocate and assign a face structure.*/
-	TArray<face*> faces = GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
-	UE_LOG(LogTemp, Display, TEXT("faces total = %d"), faces.Num());
+	dcel->GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
+	UE_LOG(LogTemp, Display, TEXT("faces total = %d"), dcel->faces.Num());
 
 
 //Get center of adjacent faces, make new list of vertices
-	TArray<vertex*> hexGlobeVertices = dcel->GenerateHexGlobeVertices();
+	dcel->hexGlobeVertices = dcel->GenerateHexGlobeVertices();
 
 	//then do "3 adjacents" for the map
-	dcel->hexGlobeAdjacencies = dcel->GetHexGlobeAdjacencies(hexGlobeVertices);
+	dcel->hexGlobeAdjacencies = dcel->GetHexGlobeAdjacencies(dcel->hexGlobeVertices);
 	dcel->halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(dcel->hexGlobeAdjacencies);
 	dcel->DoClockwiseAssignment(true);
-	faces = GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
-	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), faces.Num());
+	dcel->GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);
+	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), dcel->faces.Num());
 
 
 //Prepare vertices and triangles
 	verticeLocations = {};
-	for (int i = 0; i < hexGlobeVertices.Num(); i++) {
-		hexGlobeVertices[i]->verticesIndex = i;
-		verticeLocations.Add(hexGlobeVertices[i]->location);
+	for (int i = 0; i < dcel->hexGlobeVertices.Num(); i++) {
+		dcel->hexGlobeVertices[i]->verticesIndex = i;
+		verticeLocations.Add(dcel->hexGlobeVertices[i]->location);
 	}
 
 	triangles = {};
-	for (int f = 0; f < faces.Num(); f++) {
-		face* faceRef = faces[f];
+	for (int f = 0; f < dcel->faces.Num(); f++) {
+		face* faceRef = dcel->faces[f];
 		if (faceRef->reps.Num() == 3) {
 			triangles.Append({
 				faceRef->reps[0]->tail->verticesIndex,
@@ -94,49 +94,6 @@ void AProceduralGlobe::GenerateWorld()
 }
 
 
-TArray<face*> AProceduralGlobe::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices) {
-	TArray<half_edge*> allHalfEdges = {};
-	
-	//populateAll HalfEdges, effectively unpacking the nested map
-	TArray<vertex*> outerKeys = {};
-	halfEdgesBetweenVertices.GetKeys(outerKeys);
-	for (int i = 0; i < outerKeys.Num(); i++) {
-		vertex* outerKey = outerKeys[i];
-		TArray<half_edge*> halfEdges = {};
-		halfEdgesBetweenVertices[outerKey].GenerateValueArray(halfEdges);
-		allHalfEdges.Append(halfEdges);
-	}
-
-	TArray<face*> faces = {};
-	TSet<half_edge*> visitedEdges = {};
-
-	for (int i = 0; i < allHalfEdges.Num(); i++) {
-		if (!visitedEdges.Contains(allHalfEdges[i])) {
-			half_edge* current_edge = allHalfEdges[i];
-
-			face* newFace = new face();
-			newFace->reps = {};
-			newFace->name = "";
-
-			while (!visitedEdges.Contains(current_edge)) {
-				newFace->name += current_edge->name;
-
-				newFace->reps.Add(current_edge);
-				current_edge->left = newFace;
-				visitedEdges.Add(current_edge);
-
-				current_edge = current_edge->next;
-			}
-
-			faces.Add(newFace);
-		}
-	}
-
-
-	return faces;
-}
-
-
 TMap<vertex*, TMap<vertex*, half_edge*>> AProceduralGlobe::GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices) {
 	TArray<vertex*> vertices = {};
 	adjacentVertices.GetKeys(vertices);
@@ -156,7 +113,7 @@ TMap<vertex*, TMap<vertex*, half_edge*>> AProceduralGlobe::GetHalfEdgesBetweenVe
 					halfEdgesBetweenVertices.Add(v2, {});
 				}
 
-				TArray<half_edge*> newHalfEdges = CreateHalfEdges(v1, v2);
+				TArray<half_edge*> newHalfEdges = DoublyConnectedEdgeList::CreateHalfEdges(v1, v2);
 
 				halfEdgesBetweenVertices[v1].Add(v2, newHalfEdges[0]);
 				halfEdgesBetweenVertices[v2].Add(v1, newHalfEdges[1]);
@@ -204,26 +161,7 @@ TMap<vertex*, TArray<vertex*>> AProceduralGlobe::GetVertexAdjacencies(TArray<ver
 }
 
 
-TArray<half_edge*> AProceduralGlobe::CreateHalfEdges(vertex* vert1, vertex* vert2) {
-	half_edge* e1 = new half_edge();
-	half_edge* e2 = new half_edge();
 
-	vert1->rep = e1;
-	vert2->rep = e2;
-
-	e1->tail = vert1;
-	e2->tail = vert2;
-	e1->twin = e2;
-	e2->twin = e1;
-
-	e1->name = e1->twin->tail->name;
-	e2->name = e2->twin->tail->name;
-
-	UE_LOG(LogTemp, Display, TEXT("creating half_edge with name %s"), *(e1->name));
-	UE_LOG(LogTemp, Display, TEXT("creating half_edge with name %s"), *(e2->name));
-
-	return {e1, e2};
-}
 
 // Called when the game starts or when spawned
 void AProceduralGlobe::BeginPlay()
