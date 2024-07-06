@@ -14,15 +14,51 @@ DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
 {
 }
 
+DoublyConnectedEdgeList* DoublyConnectedEdgeList::CreateGoldbergPolyhedronFromSubdividedIcosahedron()
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::CreateGoldbergPolyhedronFromSubdividedIcosahedron)
+
+		//Get center of adjacent faces, make new list of vertices for the hex globe
+		TArray<vertex*> hexGlobeVertices = GenerateHexGlobeVertices();
+
+	DoublyConnectedEdgeList* hexDcel = new DoublyConnectedEdgeList();
+	hexDcel->vertices = hexGlobeVertices;
+	hexDcel->originalVertices = originalVertices;
+
+	//calculate half edges
+	hexDcel->adjacentVertices = hexDcel->GetHexGlobeAdjacencies(hexDcel->vertices);
+	hexDcel->halfEdgesBetweenVertices = hexDcel->GetHalfEdgesBetweenVertices(hexDcel->adjacentVertices);
+
+	hexDcel->DoClockwiseAssignment(true);
+	hexDcel->GetFacesFromHalfEdges(hexDcel->halfEdgesBetweenVertices);
+	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), hexDcel->faces.Num());
+
+	return hexDcel;
+}
+
 void DoublyConnectedEdgeList::CalculateHalfEdges() {
-	adjacentVertices = GetVertexAdjacencies(vertices);
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::CalculateHalfEdges)
+
+		adjacentVertices = GetVertexAdjacencies(vertices);
 	halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(adjacentVertices);
 }
 
+bool DoublyConnectedEdgeList::IsTriangle(face* face_in) {
+	return face_in->reps.Num() == 3;
+}
+bool DoublyConnectedEdgeList::IsPentagon(face* face_in) {
+	return face_in->reps.Num() == 5;
+}
+bool DoublyConnectedEdgeList::IsHexagon(face* face_in) {
+	return face_in->reps.Num() == 6;
+}
 
-void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
+//UV0s not working
+void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 {
-	verticeLocations = {};
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s)
+
+		verticeLocations = {};
 	for (int i = 0; i < vertices.Num(); i++) {
 		vertices[i]->verticesIndex = i;
 		verticeLocations.Add(vertices[i]->location);
@@ -31,7 +67,7 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 	triangles = {};
 	for (int f = 0; f < faces.Num(); f++) {
 		face* faceRef = faces[f];
-		if (faceRef->reps.Num() == 3) {
+		if (IsTriangle(faceRef)) {
 			triangles.Append({
 				faceRef->reps[0]->tail->verticesIndex,
 				faceRef->reps[1]->tail->verticesIndex,
@@ -61,6 +97,9 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 
 
 TMap<vertex*, TMap<vertex*, half_edge*>> DoublyConnectedEdgeList::GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices_param) {
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::GetHalfEdgesBetweenVertices)
+
+
 	TArray<vertex*> adjacentVertices_vertices = {};
 	adjacentVertices_param.GetKeys(adjacentVertices_vertices);
 
@@ -91,6 +130,8 @@ TMap<vertex*, TMap<vertex*, half_edge*>> DoublyConnectedEdgeList::GetHalfEdgesBe
 
 
 TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TArray<vertex*> vertices_param) {
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::GetVertexAdjacencies)
+
 	TMap<vertex*, TArray<vertex*>> adjacencies = {};
 
 	for (int i = 0; i < vertices_param.Num(); i++) {
@@ -129,6 +170,9 @@ TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TAr
 
 
 TArray<half_edge*> DoublyConnectedEdgeList::CreateHalfEdges(vertex* vert1, vertex* vert2) {
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::CreateHalfEdges)
+
+
 	half_edge* e1 = new half_edge();
 	half_edge* e2 = new half_edge();
 
@@ -151,6 +195,8 @@ TArray<half_edge*> DoublyConnectedEdgeList::CreateHalfEdges(vertex* vert1, verte
 }
 
 void DoublyConnectedEdgeList::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices_param) {
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::GetFacesFromHalfEdges)
+
 	TArray<half_edge*> allHalfEdges = {};
 
 	//populateAll HalfEdges, effectively unpacking the nested map
@@ -190,6 +236,8 @@ void DoublyConnectedEdgeList::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, 
 }
 
 TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices_param) {
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::GetHexGlobeAdjacencies)
+
 	TMap<vertex*, TArray<vertex*>> adjacencies = {};
 
 	for (int i = 0; i < hexGlobeVertices_param.Num(); i++) {
@@ -221,6 +269,8 @@ TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetHexGlobeAdjacencies(T
 }
 
 void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::DoClockwiseAssignment)
+
 	//3) For each endpoint, sort the half-edges whose tail vertex is that endpoint in clockwise order.
 	//4) For every pair of half-edges e1, e2 in clockwise order, assign e1->twin->next = e2 and e2->prev = e1->twin.
 	//5) Pick one of the half-edges and assign it as the representative for the endpoint. (Degenerate case: if there's only one half-edge e in the sorted list, set e->twin->next = e and e->prev = e->twin). The next pointers are a permutation on half-edges.
@@ -267,22 +317,12 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 		FVector vNormalized = FVector(v1->location);
 		vNormalized.Normalize();
 
-		//UE_LOG(LogTemp, Display, TEXT("v normalized:"));
-		//LogVector(vNormalized);
-		//UE_LOG(LogTemp, Display, TEXT("h0 normalized::"));
-		//LogVector(he0Normalized);
-		//UE_LOG(LogTemp, Display, TEXT("h1 normalized::"));
-		//LogVector(he1Normalized);
-		//UE_LOG(LogTemp, Display, TEXT("h2 normalized::"));
-		//LogVector(he2Normalized);
 
-		//get angles in clockwise order...?
-
+		//get angles in clockwise order
 		for (int j = 1; j < adjacentVerticeCount; j++) {
 			TArray<FVector> halfEdgeVectors = {};
 			half_edges_byTwinTailVector.GetKeys(halfEdgeVectors);
 
-			//DEBUG HELPER: I've verified that 5 unique vectors come in
 			int degreesToRotate = j * 360 / adjacentVerticeCount;
 			UE_LOG(LogTemp, Display, TEXT("degrees to rotate: %d"), degreesToRotate);
 			FVector expectedNextVector = Util::RotateRelativeToVectorAndQuat(firstNormalized, vNormalized, FQuat(vNormalized, FMath::DegreesToRadians(degreesToRotate)));
@@ -324,6 +364,9 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 }
 
 TArray<vertex*> DoublyConnectedEdgeList::GenerateHexGlobeVertices() {
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::GenerateHexGlobeVertices)
+
+
 	TArray<vertex*> newHexGlobeVertices = {};
 	TSet<face*> visitedFaces = {};
 	for (int i = 0; i < vertices.Num(); i++) {
@@ -359,6 +402,8 @@ TArray<vertex*> DoublyConnectedEdgeList::GenerateHexGlobeVertices() {
 }
 
 void DoublyConnectedEdgeList::Subdivide() {
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::Subdivide)
+
 	int midpointCounter = 0;
 	TSet<half_edge*> visited = {};
 

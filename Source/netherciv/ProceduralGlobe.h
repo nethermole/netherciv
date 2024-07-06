@@ -37,6 +37,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<int> triangles;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TArray<FVector2D> UV0;
+
 	DoublyConnectedEdgeList* dcel;
 
 

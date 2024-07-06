@@ -44,7 +44,7 @@ public:
 	DoublyConnectedEdgeList();
 	~DoublyConnectedEdgeList();
 
-	DoublyConnectedEdgeList CreateGoldbergPolyhedronFromSubdividedIcosahedron();
+	DoublyConnectedEdgeList* CreateGoldbergPolyhedronFromSubdividedIcosahedron();
 
 	void LoadIcosahedronCartesianCoordinates();
 	void Subdivide();
@@ -63,10 +63,11 @@ public:
 
 	void CalculateHalfEdges();
 
-	void PrepareVerticeLocationsAndTriangles();
+	void PrepareVerticeLocationsAndTrianglesAndUV0s();
 
 	TArray<vertex*> vertices;
 	TSet<vertex*> originalVertices;
+	TArray<FVector2D> UV0;
 
 	TArray<face*> faces;
 
@@ -75,4 +76,8 @@ public:
 
 	TArray<FVector> verticeLocations;
 	TArray<int> triangles;
+
+	static bool IsTriangle(face* face_in);
+	static bool IsPentagon(face* face_in);
+	static bool IsHexagon(face* face_in);
 };

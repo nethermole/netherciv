@@ -23,6 +23,7 @@ void AProceduralGlobe::GenerateWorld()
 
 	verticeLocations = dcel->verticeLocations;
 	triangles = dcel->triangles;
+	//UV0 = dcel->UV0;
 }
 
 
@@ -37,6 +38,9 @@ void AProceduralGlobe::GenerateWorld()
 //5)For every cycle, allocate and assign a face structure.
 void AProceduralGlobe::CreateGlobeDcel(int subdivisions)
 {
+	TRACE_BOOKMARK(TEXT("CreateGlobeDcel bookmark"))
+	TRACE_CPUPROFILER_EVENT_SCOPE(AProceduralGlobe::CreateGlobeDcel)
+//Load the subdivided icosahedron
 	dcel = new DoublyConnectedEdgeList();
 
 	dcel->LoadIcosahedronCartesianCoordinates();	//1
@@ -46,31 +50,13 @@ void AProceduralGlobe::CreateGlobeDcel(int subdivisions)
 		dcel->Subdivide();
 		dcel->CalculateHalfEdges();
 	}
-
 	dcel->DoClockwiseAssignment(false);		//4
 	dcel->GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);	//5
 
+
 //To hexes
-	//dcel = dcel->CreateGoldbergPolyhedronFromSubdividedIcosahedron();
-	//Get center of adjacent faces, make new list of vertices for the hex globe
-	TArray<vertex*> hexGlobeVertices = dcel->GenerateHexGlobeVertices();
-
-	DoublyConnectedEdgeList* hexDcel = new DoublyConnectedEdgeList();
-	hexDcel->vertices = hexGlobeVertices;
-	hexDcel->originalVertices = dcel->originalVertices;
-
-	//calculate half edges
-	hexDcel->adjacentVertices = hexDcel->GetHexGlobeAdjacencies(hexDcel->vertices);
-	hexDcel->halfEdgesBetweenVertices = hexDcel->GetHalfEdgesBetweenVertices(hexDcel->adjacentVertices);
-
-	hexDcel->DoClockwiseAssignment(true);
-	hexDcel->GetFacesFromHalfEdges(hexDcel->halfEdgesBetweenVertices);
-	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), hexDcel->faces.Num());
-
-
-	//Prepare verticesLocations and triangles
-	hexDcel->PrepareVerticeLocationsAndTriangles();
-
+	DoublyConnectedEdgeList* hexDcel = dcel->CreateGoldbergPolyhedronFromSubdividedIcosahedron();
+	hexDcel->PrepareVerticeLocationsAndTrianglesAndUV0s();
 	dcel = hexDcel;
 }
 
