@@ -18,8 +18,8 @@ DoublyConnectedEdgeList* DoublyConnectedEdgeList::CreateGoldbergPolyhedronFromSu
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::CreateGoldbergPolyhedronFromSubdividedIcosahedron)
 
-		//Get center of adjacent faces, make new list of vertices for the hex globe
-		TArray<vertex*> hexGlobeVertices = GenerateHexGlobeVertices();
+	//Get center of adjacent faces, make new list of vertices for the hex globe
+	TArray<vertex*> hexGlobeVertices = GenerateHexGlobeVertices();
 
 	DoublyConnectedEdgeList* hexDcel = new DoublyConnectedEdgeList();
 	hexDcel->vertices = hexGlobeVertices;
