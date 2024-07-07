@@ -39,7 +39,7 @@ DoublyConnectedEdgeList* DoublyConnectedEdgeList::CreateGoldbergPolyhedronFromSu
 void DoublyConnectedEdgeList::CalculateHalfEdges() {
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::CalculateHalfEdges)
 
-		adjacentVertices = GetVertexAdjacencies(vertices);
+	adjacentVertices = GetVertexAdjacencies(vertices);
 	halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(adjacentVertices);
 }
 
@@ -58,7 +58,7 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s)
 
-		verticeLocations = {};
+	verticeLocations = {};
 	for (int i = 0; i < vertices.Num(); i++) {
 		vertices[i]->verticesIndex = i;
 		verticeLocations.Add(vertices[i]->location);
@@ -134,6 +134,7 @@ TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TAr
 
 	TMap<vertex*, TArray<vertex*>> adjacencies = {};
 
+	//you need some caching. also in the hex globe adjacencies. maybe you can merge the functions together first.. pass in some adjacent
 	for (int i = 0; i < vertices_param.Num(); i++) {
 		vertex* v1 = vertices_param[i];
 
@@ -318,6 +319,8 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 		vNormalized.Normalize();
 
 
+
+		TSet<FVector> alreadyInTheClockwiseOrder = TSet<FVector>();
 		//get angles in clockwise order
 		for (int j = 1; j < adjacentVerticeCount; j++) {
 			TArray<FVector> halfEdgeVectors = {};
@@ -333,20 +336,24 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 			//after this for loop, closestVector is the next clockwise vector
 			double closestSoFar = 9999;	//just bigger than 360 i guess
 			FVector closestVector = FVector(0, 0, 0);	//it should never remain this, as we already added it above and are now rotating it
+			
 			for (int k = 0; k < halfEdgeVectors.Num(); k++) {
-				FVector toMeasure = halfEdgeVectors[k];
-				double offBy = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(expectedNextVector, toMeasure)));
+				if (!alreadyInTheClockwiseOrder.Contains(halfEdgeVectors[k])) {
+					FVector toMeasure = halfEdgeVectors[k];
+					double offBy = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(expectedNextVector, toMeasure)));
 
-
-				if (offBy < closestSoFar) {
-					closestSoFar = offBy;
-					closestVector = toMeasure;
+					if (offBy < closestSoFar) {
+						closestSoFar = offBy;
+						closestVector = toMeasure;
+					}
 				}
 			}
 			UE_LOG(LogTemp, Display, TEXT("next clockwise is %s, off by %.6f"), *(half_edges_byTwinTailVector[closestVector]->name), closestSoFar);
 			UE_LOG(LogTemp, Display, TEXT("with vector:"));
 			Util::LogVector(closestVector);
+
 			clockwiseEdges.Add(half_edges_byTwinTailVector[closestVector]);
+			alreadyInTheClockwiseOrder.Add(closestVector);
 		}
 
 
