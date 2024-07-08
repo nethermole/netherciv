@@ -51,17 +51,15 @@ public:
 	TArray<vertex*> GenerateHexGlobeVertices();
 	void DoClockwiseAssignment(bool isHexGlobe);
 
-	TMap<vertex*, TArray<vertex*>> GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices_param);
-
 	void GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices_param);
 
 	static TArray<half_edge*>  CreateHalfEdges(vertex* v1, vertex* v2);
 
 
-	TMap<vertex*, TArray<vertex*>> GetVertexAdjacencies(TArray<vertex*> vertices_param);
+	TMap<vertex*, TArray<vertex*>> GetVertexAdjacencies(TArray<vertex*> vertices_param, bool isHexGlobe);
 	TMap<vertex*, TMap<vertex*, half_edge*>> GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices_param);
 
-	void CalculateHalfEdges();
+	void CalculateHalfEdges(bool isHexGlobe);
 
 	void PrepareVerticeLocationsAndTrianglesAndUV0s();
 

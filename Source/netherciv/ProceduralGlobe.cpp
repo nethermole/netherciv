@@ -44,11 +44,11 @@ void AProceduralGlobe::CreateGlobeDcel(int subdivisions)
 	dcel = new DoublyConnectedEdgeList();
 
 	dcel->LoadIcosahedronCartesianCoordinates();	//1
-	dcel->CalculateHalfEdges();		//2
+	dcel->CalculateHalfEdges(false);		//2
 
 	for (int subdivCount = 0; subdivCount < subdivisions; subdivCount++) {	//3
 		dcel->Subdivide();
-		dcel->CalculateHalfEdges();
+		dcel->CalculateHalfEdges(false);
 	}
 	dcel->DoClockwiseAssignment(false);		//4
 	dcel->GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);	//5

@@ -26,7 +26,7 @@ DoublyConnectedEdgeList* DoublyConnectedEdgeList::CreateGoldbergPolyhedronFromSu
 	hexDcel->originalVertices = originalVertices;
 
 	//calculate half edges
-	hexDcel->adjacentVertices = hexDcel->GetHexGlobeAdjacencies(hexDcel->vertices);
+	hexDcel->adjacentVertices = hexDcel->GetVertexAdjacencies(hexDcel->vertices, true);
 	hexDcel->halfEdgesBetweenVertices = hexDcel->GetHalfEdgesBetweenVertices(hexDcel->adjacentVertices);
 
 	hexDcel->DoClockwiseAssignment(true);
@@ -36,10 +36,10 @@ DoublyConnectedEdgeList* DoublyConnectedEdgeList::CreateGoldbergPolyhedronFromSu
 	return hexDcel;
 }
 
-void DoublyConnectedEdgeList::CalculateHalfEdges() {
+void DoublyConnectedEdgeList::CalculateHalfEdges(bool isHexGlobe) {
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::CalculateHalfEdges)
 
-	adjacentVertices = GetVertexAdjacencies(vertices);
+	adjacentVertices = GetVertexAdjacencies(vertices, isHexGlobe);
 	halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(adjacentVertices);
 }
 
@@ -129,7 +129,7 @@ TMap<vertex*, TMap<vertex*, half_edge*>> DoublyConnectedEdgeList::GetHalfEdgesBe
 }
 
 
-TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TArray<vertex*> vertices_param) {
+TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TArray<vertex*> vertices_param, bool isHexGlobe) {
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::GetVertexAdjacencies)
 
 	TMap<vertex*, TArray<vertex*>> adjacencies = {};
@@ -157,6 +157,9 @@ TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TAr
 		}
 		else {
 			adjacentVerticeCount = 6;
+		}
+		if (isHexGlobe) {
+			adjacentVerticeCount = 3;
 		}
 
 		TArray<vertex*> adjacentVerts = {};
@@ -234,39 +237,6 @@ void DoublyConnectedEdgeList::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, 
 			faces.Add(newFace);
 		}
 	}
-}
-
-TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetHexGlobeAdjacencies(TArray<vertex*> hexGlobeVertices_param) {
-	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::GetHexGlobeAdjacencies)
-
-	TMap<vertex*, TArray<vertex*>> adjacencies = {};
-
-	for (int i = 0; i < hexGlobeVertices_param.Num(); i++) {
-		vertex* v1 = hexGlobeVertices_param[i];
-
-		TMap<vertex*, double> edgeDistances = {};
-		for (int j = 0; j < hexGlobeVertices_param.Num(); j++) {
-			if (j != i) {
-				vertex* v2 = hexGlobeVertices_param[j];
-				double distance = (v1->location - v2->location).Length();
-				edgeDistances.Add(v2, distance);
-			}
-		}
-
-		edgeDistances.ValueSort([](double val1, double val2) {return val1 - val2 < 0; });
-		TArray<vertex*> edgesByDist = {};
-		edgeDistances.GenerateKeyArray(edgesByDist);
-
-		int adjacentVerticeCount = 3;
-
-		TArray<vertex*> adjacentVerts = {};
-		for (int j = 0; j < adjacentVerticeCount; j++) {
-			adjacentVerts.Add(edgesByDist[j]);
-		}
-		adjacencies.Add(v1, adjacentVerts);
-	}
-
-	return adjacencies;
 }
 
 void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
