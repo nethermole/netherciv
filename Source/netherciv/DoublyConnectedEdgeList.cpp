@@ -3,8 +3,7 @@
 
 #include "DoublyConnectedEdgeList.h"
 #include "Util.h"
-
-
+#include "KDTree.h"
 
 DoublyConnectedEdgeList::DoublyConnectedEdgeList()
 {
@@ -31,7 +30,7 @@ DoublyConnectedEdgeList* DoublyConnectedEdgeList::CreateGoldbergPolyhedronFromSu
 
 	hexDcel->DoClockwiseAssignment(true);
 	hexDcel->GetFacesFromHalfEdges(hexDcel->halfEdgesBetweenVertices);
-	UE_LOG(LogTemp, Display, TEXT("globe faces total = %d"), hexDcel->faces.Num());
+	UE_LOG(LogTemp, Display, TEXT("hex globe faces total = %d"), hexDcel->faces.Num());
 
 	return hexDcel;
 }
@@ -129,30 +128,24 @@ TMap<vertex*, TMap<vertex*, half_edge*>> DoublyConnectedEdgeList::GetHalfEdgesBe
 }
 
 
+
+
 TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TArray<vertex*> vertices_param, bool isHexGlobe) {
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::GetVertexAdjacencies)
 
-	TMap<vertex*, TArray<vertex*>> adjacencies = {};
+	using tree_t = jk::tree::KDTree<vertex*, 3>;
+	using point_t = std::array<double, 3>;
 
-	//you need some caching. also in the hex globe adjacencies. maybe you can merge the functions together first.. pass in some adjacent
-	for (int i = 0; i < vertices_param.Num(); i++) {
-		vertex* v1 = vertices_param[i];
+	tree_t tree;
+	for (vertex* v : vertices_param) {
+		tree.addPoint(point_t{ {v->location.X, v->location.Y, v->location.Z} }, v);
+	}
 
-		TMap<vertex*, double> edgeDistances = {};
-		for (int j = 0; j < vertices_param.Num(); j++) {
-			if (j != i) {
-				vertex* v2 = vertices_param[j];
-				double distance = (v1->location - v2->location).Length();
-				edgeDistances.Add(v2, distance);
-			}
-		}
-
-		edgeDistances.ValueSort([](double val1, double val2) {return val1 - val2 < 0; });
-		TArray<vertex*> edgesByDist = {};
-		edgeDistances.GenerateKeyArray(edgesByDist);
-
+	adjacentVertices = {};
+	double radiusToCheck = 1500.0;
+	for (vertex* v : vertices_param) {
 		int adjacentVerticeCount;
-		if (originalVertices.Contains(v1)) {
+		if (originalVertices.Contains(v)) {
 			adjacentVerticeCount = 5;
 		}
 		else {
@@ -162,14 +155,30 @@ TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TAr
 			adjacentVerticeCount = 3;
 		}
 
-		TArray<vertex*> adjacentVerts = {};
-		for (int j = 0; j < adjacentVerticeCount; j++) {
-			adjacentVerts.Add(edgesByDist[j]);
-		}
-		adjacencies.Add(v1, adjacentVerts);
-	}
+		point_t vPoint = point_t{ v->location.X, v->location.Y, v->location.Z };
 
-	return adjacencies;
+		auto potentialAdjacents = tree.searchBall(vPoint, radiusToCheck * radiusToCheck);
+		while (potentialAdjacents.size() > adjacentVerticeCount + 1) {
+			radiusToCheck /= 2;
+			potentialAdjacents = tree.searchBall(vPoint, radiusToCheck * radiusToCheck);
+		}
+		radiusToCheck *= 2;
+		potentialAdjacents = tree.searchBall(vPoint, radiusToCheck * radiusToCheck);
+		UE_LOG(LogTemp, Display, TEXT("radius = %f, potentialAdjacents.size= %d"), radiusToCheck, potentialAdjacents.size());
+
+		//+1 because includes self
+		auto adjacentVerticesFromKDTree = tree.searchCapacityLimitedBall(vPoint, radiusToCheck * radiusToCheck, adjacentVerticeCount+1);
+
+		TArray<vertex*> verticesAdjacentToV = {};
+		for (const auto& adjacentVertex : adjacentVerticesFromKDTree) {
+			if (v != adjacentVertex.payload) {	//exclude self
+				verticesAdjacentToV.Add(adjacentVertex.payload);
+			}
+		}
+
+		adjacentVertices.Add(v, verticesAdjacentToV);
+	}
+	return adjacentVertices;
 }
 
 

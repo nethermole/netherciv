@@ -19,7 +19,7 @@ AProceduralGlobe::AProceduralGlobe()
 
 void AProceduralGlobe::GenerateWorld() 
 {
-	CreateGlobeDcel(2);
+	CreateGlobeDcel(6);
 
 	verticeLocations = dcel->verticeLocations;
 	triangles = dcel->triangles;

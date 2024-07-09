@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "set"
 
 struct half_edge {
 	struct half_edge* prev;  /* prev->next == this */
@@ -33,6 +34,13 @@ struct vertex {
 	int verticesIndex;
 };
 
+
+class VertexAdjacenciesComparator {
+public:
+	bool operator()(std::pair<vertex*, double> v1, std::pair<vertex*, double> v2) {
+		return v1.second < v2.second;
+	}
+};
 
 
 /**
@@ -78,4 +86,7 @@ public:
 	static bool IsTriangle(face* face_in);
 	static bool IsPentagon(face* face_in);
 	static bool IsHexagon(face* face_in);
+
+	TMap<vertex*, std::priority_queue<std::pair<vertex*, double>, std::vector<std::pair<vertex*, double>>, VertexAdjacenciesComparator>> newApproachCache;
+	std::set<std::pair<vertex*, vertex*>> alreadyVisisted;
 };
