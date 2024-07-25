@@ -58,6 +58,7 @@ public:
 	void Subdivide();
 	TArray<vertex*> GenerateHexGlobeVertices();
 	void DoClockwiseAssignment(bool isHexGlobe);
+	void DoClockwiseAssignmentImpl2(bool isHexGlobe);
 
 	void GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices_param);
 
@@ -89,4 +90,7 @@ public:
 
 	TMap<vertex*, std::priority_queue<std::pair<vertex*, double>, std::vector<std::pair<vertex*, double>>, VertexAdjacenciesComparator>> newApproachCache;
 	std::set<std::pair<vertex*, vertex*>> alreadyVisisted;
+
+	void WriteToFile(int subd);
+	void ReadFromFile(int subd);
 };

@@ -42,6 +42,155 @@ void DoublyConnectedEdgeList::CalculateHalfEdges(bool isHexGlobe) {
 	halfEdgesBetweenVertices = GetHalfEdgesBetweenVertices(adjacentVertices);
 }
 
+void DoublyConnectedEdgeList::ReadFromFile(int subd) {
+	FString fpath = "C:/temp/subd";
+	fpath += FString::FromInt(subd);
+	fpath += ".txt";
+
+	FString filePath = FPaths::ConvertRelativePathToFull(fpath);
+	FString fileContent = "";
+	UE_LOG(LogTemp, Display, TEXT("Loading file"));
+	FFileHelper::LoadFileToString(fileContent, *filePath);
+
+	TArray<FString> contentLines;
+	fileContent.ParseIntoArrayLines(contentLines);
+
+	vertices = {};
+	int lineIndex = 2;	//start at 2 to skip "VERTICES (x, y, z), and count"
+	while (contentLines[lineIndex] != FString("HALF_EDGES (index, tail(vertex), twin, prev, next)")) {
+		TArray<FString> coordinates;
+		contentLines[lineIndex].ParseIntoArray(coordinates, TEXT(","));
+
+		vertex* v = new vertex();
+		v->verticesIndex = FCString::Atoi(*(coordinates[0]));
+		v->location.X = FCString::Atod(*(coordinates[1]));
+		v->location.Y = FCString::Atod(*(coordinates[2]));
+		v->location.Z = FCString::Atod(*(coordinates[3]));
+		vertices.Add(v);
+
+		lineIndex++;
+	}
+	lineIndex++;
+	
+	halfEdgesBetweenVertices = {};
+	int numHalfEdges = FCString::Atoi(*(contentLines[lineIndex]));
+	lineIndex++;
+
+	TArray<half_edge*> heArray = {};
+	for (int i = 0; i < numHalfEdges; i++) {
+		heArray.Add(new half_edge());
+	}
+	
+	while (contentLines[lineIndex] != FString("FACES (half_edge_indices)")) {
+		TArray<FString> refs;
+		contentLines[lineIndex].ParseIntoArray(refs, TEXT(","));
+
+		int selfIndex = FCString::Atoi(*(refs[0]));
+		int tailVertexIndex = FCString::Atoi(*(refs[1]));
+		int twinIndex = FCString::Atoi(*(refs[2]));
+		int prevIndex = FCString::Atoi(*(refs[3]));
+		int nextIndex = FCString::Atoi(*(refs[4]));
+
+		half_edge* h = heArray[selfIndex];
+		h->tail = vertices[tailVertexIndex];
+		h->twin = heArray[twinIndex];
+		h->prev = heArray[prevIndex];
+		h->next = heArray[nextIndex];
+
+		lineIndex++;
+	}
+	lineIndex++;
+	lineIndex++;
+
+	faces = {};
+	while (lineIndex < contentLines.Num()) {
+		face* newFace = new face();
+		newFace->reps = {};
+
+		TArray<FString> refs;
+		contentLines[lineIndex].ParseIntoArray(refs, TEXT(","));
+		for (int i = 0; i < refs.Num(); i++) {
+			newFace->reps.Add(heArray[FCString::Atoi(*(refs[i]))]);
+		}
+		faces.Add(newFace);
+
+		lineIndex++;
+	}
+
+
+	UE_LOG(LogTemp, Display, TEXT("Done loading file"));
+}
+
+void DoublyConnectedEdgeList::WriteToFile(int subd)
+{
+	FString serializedString = "";
+	serializedString += "VERTICES (x, y, z)\n";
+	serializedString += FString::FromInt(vertices.Num());
+	serializedString += "\n";
+	for (vertex* v : vertices) {
+		serializedString += FString::FromInt(v->verticesIndex);
+		serializedString += ",";
+		serializedString += FString::SanitizeFloat(v->location.X);
+		serializedString += ",";
+		serializedString += FString::SanitizeFloat(v->location.Y);
+		serializedString += ",";
+		serializedString += FString::SanitizeFloat(v->location.Z);
+		serializedString += "\n";
+	}
+
+
+	//get half-edges into array, map
+	TArray<half_edge*> h = {};
+	TMap<half_edge*, int> h_indices = {};
+
+	TArray<TMap<vertex*, half_edge*>> halfEdgesValues = {};
+	halfEdgesBetweenVertices.GenerateValueArray(halfEdgesValues);
+	for (int i = 0; i < halfEdgesValues.Num(); i++) {
+		TArray<half_edge*> halfEdgesFromMap = {};
+		halfEdgesValues[i].GenerateValueArray(halfEdgesFromMap);
+		for (int j = 0; j < halfEdgesFromMap.Num(); j++) {
+			h_indices.Add(halfEdgesFromMap[j], h.Num());
+			h.Add(halfEdgesFromMap[j]);
+		}
+	}
+
+	serializedString += "HALF_EDGES (index, tail(vertex), twin, prev, next)\n";
+	serializedString += FString::FromInt(h.Num());
+	serializedString += "\n";
+	for (int i = 0; i < h.Num(); i++) {
+		serializedString += FString::FromInt(h_indices[h[i]]);
+		serializedString += ",";
+		serializedString += FString::FromInt(h[i]->tail->verticesIndex);
+		serializedString += ",";
+		serializedString += FString::FromInt(h_indices[h[i]->twin]);
+		serializedString += ",";
+		serializedString += FString::FromInt(h_indices[h[i]->prev]);
+		serializedString += ",";
+		serializedString += FString::FromInt(h_indices[h[i]->next]);
+		serializedString += "\n";
+	}
+
+	serializedString += "FACES (half_edge_indices)\n";
+	serializedString += FString::FromInt(faces.Num());
+	for (int i = 0; i < faces.Num(); i++) {
+		serializedString += "\n";
+		for (int j = 0; j < faces[i]->reps.Num(); j++) {
+			serializedString += FString::FromInt(h_indices[faces[i]->reps[j]]);
+			
+			if (j != faces[i]->reps.Num() - 1) {
+				serializedString += ",";
+			}
+		}
+	}
+
+	FString fpath = "C:/temp/subd";
+	fpath += FString::FromInt(subd);
+	fpath += ".txt";
+
+	FString FilePath = FPaths::ConvertRelativePathToFull(fpath);
+	FFileHelper::SaveStringToFile(serializedString, *FilePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_Append);
+}
+
 bool DoublyConnectedEdgeList::IsTriangle(face* face_in) {
 	return face_in->reps.Num() == 3;
 }
@@ -142,7 +291,7 @@ TMap<vertex*, TArray<vertex*>> DoublyConnectedEdgeList::GetVertexAdjacencies(TAr
 	}
 
 	adjacentVertices = {};
-	double radiusToCheck = 1500.0;
+	double radiusToCheck = 2048.0;
 	for (vertex* v : vertices_param) {
 		int adjacentVerticeCount;
 		if (originalVertices.Contains(v)) {
@@ -248,6 +397,11 @@ void DoublyConnectedEdgeList::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, 
 	}
 }
 
+void DoublyConnectedEdgeList::DoClockwiseAssignmentImpl2(bool isHexGlobe) {
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::DoClockwiseAssignment)
+		return;
+}
+
 void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::DoClockwiseAssignment)
 
@@ -260,7 +414,7 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 
 	for (int i = 0; i < half_edges_by_v1.Num(); i++) {
 		vertex* v1 = half_edges_by_v1[i];
-		UE_LOG(LogTemp, Display, TEXT("Clockwise for %s:"), *(v1->name));
+		//UE_LOG(LogTemp, Display, TEXT("Clockwise for %s:"), *(v1->name));
 
 		int adjacentVerticeCount;
 		if (originalVertices.Contains(v1)) {
@@ -291,7 +445,7 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 		FVector firstNormalized = FVector(first->twin->tail->location);
 
 		clockwiseEdges.Add(first);
-		UE_LOG(LogTemp, Display, TEXT("first is %s"), *(first->name));
+		//UE_LOG(LogTemp, Display, TEXT("first is %s"), *(first->name));
 
 		//get the other side vectors of the half edges
 		FVector vNormalized = FVector(v1->location);
@@ -306,10 +460,10 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 			half_edges_byTwinTailVector.GetKeys(halfEdgeVectors);
 
 			int degreesToRotate = j * 360 / adjacentVerticeCount;
-			UE_LOG(LogTemp, Display, TEXT("degrees to rotate: %d"), degreesToRotate);
+			//UE_LOG(LogTemp, Display, TEXT("degrees to rotate: %d"), degreesToRotate);
 			FVector expectedNextVector = Util::RotateRelativeToVectorAndQuat(firstNormalized, vNormalized, FQuat(vNormalized, FMath::DegreesToRadians(degreesToRotate)));
 			expectedNextVector.Normalize();
-			UE_LOG(LogTemp, Display, TEXT("expected rotation: "));
+			//UE_LOG(LogTemp, Display, TEXT("expected rotation: "));
 			Util::LogVector(expectedNextVector);
 
 			//after this for loop, closestVector is the next clockwise vector
@@ -327,9 +481,9 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 					}
 				}
 			}
-			UE_LOG(LogTemp, Display, TEXT("next clockwise is %s, off by %.6f"), *(half_edges_byTwinTailVector[closestVector]->name), closestSoFar);
-			UE_LOG(LogTemp, Display, TEXT("with vector:"));
-			Util::LogVector(closestVector);
+			//UE_LOG(LogTemp, Display, TEXT("next clockwise is %s, off by %.6f"), *(half_edges_byTwinTailVector[closestVector]->name), closestSoFar);
+			//UE_LOG(LogTemp, Display, TEXT("with vector:"));
+			//Util::LogVector(closestVector);
 
 			clockwiseEdges.Add(half_edges_byTwinTailVector[closestVector]);
 			alreadyInTheClockwiseOrder.Add(closestVector);

@@ -19,10 +19,23 @@ AProceduralGlobe::AProceduralGlobe()
 
 void AProceduralGlobe::GenerateWorld() 
 {
-	CreateGlobeDcel(6);
+	DoublyConnectedEdgeList* dcel2 = new DoublyConnectedEdgeList();
+	dcel2->ReadFromFile(8);
+	dcel2->PrepareVerticeLocationsAndTrianglesAndUV0s();
 
-	verticeLocations = dcel->verticeLocations;
-	triangles = dcel->triangles;
+	verticeLocations = dcel2->verticeLocations;
+	triangles = dcel2->triangles;
+
+
+
+		//CreateGlobeDcel(9);
+		//dcel->WriteToFile(9);
+
+
+
+	// 	verticeLocations = dcel->verticeLocations;
+	//  triangles = dcel->triangles;
+	// 
 	//UV0 = dcel->UV0;
 }
 
