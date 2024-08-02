@@ -207,16 +207,69 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s)
 
 	verticeLocations = {};
-	for (int i = 0; i < vertices.Num(); i++) {
-		vertices[i]->verticesIndex = i;
-		verticeLocations.Add(vertices[i]->location);
+	triangles = {};
+
+	for (face* faceRef : faces) {
+		TArray<FVector> faceVertices = {};
+
+		FVector midpoint = FVector(0, 0, 0);
+		for (int i = 0; i < faceRef->reps.Num(); i++) {
+			faceVertices.Add(faceRef->reps[i]->tail->location);
+
+			midpoint += faceRef->reps[i]->tail->location;
+		}
+		midpoint /= faceRef->reps.Num();
+
+		int faceVerticesNum = faceVertices.Num();
+		faceVertices.Add(midpoint);
+
+		TArray<int> faceTriangles = {};
+		for (int i = 0; i < faceVerticesNum; i++) {
+			faceTriangles.Add(i);
+			faceTriangles.Add((i + 1) % faceVerticesNum);
+			faceTriangles.Add(faceVerticesNum);	//middle of face
+		}
+
+		TArray<FVector2D> faceUv0s = {};
+		for (int i = 0; i < faceVertices.Num(); i++) {
+			bool water = rand() % 2 == 0;
+			if (water) {
+				faceUv0s.Add(FVector2D(0.01 * (i + 1), 0.01 * (i + 1)));
+			}
+			else {
+				faceUv0s.Add(FVector2D((0.01 * (i + 1)) + 0.6, (0.01 * (i + 1)) + 0.6));
+			}
+			
+		}
+
+		verticeLocations.Add(faceVertices);
+		triangles.Add(faceTriangles);
+		uv0s.Add(faceUv0s);
+
+		allVerticeLocations.Append(faceVertices);
+		allTriangles.Append(faceTriangles);
+		allUv0s.Append(faceUv0s);
 	}
 
-	triangles = {};
+
+
+
+	allVerticeLocations = {};
+	allTriangles = {};
+	allUv0s = {};
+
+	allVerticeLocations = {};
+	for (int i = 0; i < vertices.Num(); i++) {
+		vertices[i]->verticesIndex = i;
+		allVerticeLocations.Add(vertices[i]->location);
+	}
+
+	allTriangles = {};
+	trianglesBy3s = {};
 	for (int f = 0; f < faces.Num(); f++) {
 		face* faceRef = faces[f];
 		if (IsTriangle(faceRef)) {
-			triangles.Append({
+			allTriangles.Append({
 				faceRef->reps[0]->tail->verticesIndex,
 				faceRef->reps[1]->tail->verticesIndex,
 				faceRef->reps[2]->tail->verticesIndex
@@ -228,16 +281,39 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 				midpoint += faceRef->reps[i]->tail->location;
 			}
 			midpoint /= faceRef->reps.Num();
-			verticeLocations.Add(midpoint);
+			allVerticeLocations.Add(midpoint);
+
+			bool water = rand() % 2 == 0;
 
 			for (int i = 0; i < faceRef->reps.Num(); i++) {
 				half_edge* edge = faceRef->reps[i];
 
-				triangles.Append({
+				allTriangles.Append({
 					edge->tail->verticesIndex,
 					edge->next->tail->verticesIndex,
-				verticeLocations.Num() - 1
+				allVerticeLocations.Num() - 1
 					});
+
+				trianglesBy3s.Add(FIntVector(
+					edge->tail->verticesIndex,
+					edge->next->tail->verticesIndex,
+					allVerticeLocations.Num() - 1
+				));
+
+				if (water) {
+					waterTrianglesBy3s.Add(FIntVector(
+						edge->tail->verticesIndex,
+						edge->next->tail->verticesIndex,
+						allVerticeLocations.Num() - 1
+					));
+				}
+				else {
+					landTrianglesBy3s.Add(FIntVector(
+						edge->tail->verticesIndex,
+						edge->next->tail->verticesIndex,
+						allVerticeLocations.Num() - 1
+					));
+				}
 			}
 		}
 	}

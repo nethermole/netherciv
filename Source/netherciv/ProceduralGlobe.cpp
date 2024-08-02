@@ -20,12 +20,21 @@ AProceduralGlobe::AProceduralGlobe()
 void AProceduralGlobe::GenerateWorld() 
 {
 	DoublyConnectedEdgeList* dcel2 = new DoublyConnectedEdgeList();
-	dcel2->ReadFromFile(8);
+	dcel2->ReadFromFile(7);
 	dcel2->PrepareVerticeLocationsAndTrianglesAndUV0s();
+
+	faceCount = dcel2->faces.Num();
 
 	verticeLocations = dcel2->verticeLocations;
 	triangles = dcel2->triangles;
+	uv0s = dcel2->uv0s;
+	allTrianglesBy3s = dcel2->trianglesBy3s;
+	waterTriangles = dcel2->waterTrianglesBy3s;
+	landTriangles = dcel2->landTrianglesBy3s;
 
+	allVerticeLocations = dcel2->allVerticeLocations;
+	allTriangles = dcel2->allTriangles;
+	allUV0 = dcel2->allUv0s;
 
 
 		//CreateGlobeDcel(9);
@@ -71,6 +80,51 @@ void AProceduralGlobe::CreateGlobeDcel(int subdivisions)
 	DoublyConnectedEdgeList* hexDcel = dcel->CreateGoldbergPolyhedronFromSubdividedIcosahedron();
 	hexDcel->PrepareVerticeLocationsAndTrianglesAndUV0s();
 	dcel = hexDcel;
+}
+
+TArray<FVector> AProceduralGlobe::GetAllVerticeLocations()
+{
+	return allVerticeLocations;
+}
+
+TArray<int> AProceduralGlobe::GetAllTriangles()
+{
+	return allTriangles;
+}
+
+TArray<FIntVector> AProceduralGlobe::GetAllTrianglesBy3s()
+{
+	return allTrianglesBy3s;
+}
+
+TArray<FIntVector> AProceduralGlobe::GetAllWaterTrianglesBy3s()
+{
+	return waterTriangles;
+}
+
+TArray<FIntVector> AProceduralGlobe::GetAllLandTrianglesBy3s()
+{
+	return landTriangles;
+}
+
+TArray<FVector2D> AProceduralGlobe::GetAllUV0()
+{
+	return allUV0;
+}
+
+TArray<FVector> AProceduralGlobe::GetVerticeLocationsByFaceIndex(int index)
+{
+	return verticeLocations[index];
+}
+
+TArray<int> AProceduralGlobe::GetTrianglesByFaceIndex(int index)
+{
+	return triangles[index];
+}
+
+TArray<FVector2D> AProceduralGlobe::getUV0ByFaceIndex(int index)
+{
+	return uv0s[index];
 }
 
 

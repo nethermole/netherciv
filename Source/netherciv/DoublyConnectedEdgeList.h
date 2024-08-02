@@ -17,11 +17,6 @@ struct half_edge {
 
 struct face {
 	TArray<half_edge*> reps;
-	struct half_edge* rep;  /* rep->left == this */
-	struct half_edge* rep2;  /* rep->left == this */
-	struct half_edge* rep3;  /* rep->left == this */
-	struct half_edge* rep4;  /* rep->left == this */
-	struct half_edge* rep5;  /* rep->left == this */
 
 	FString name;
 };
@@ -81,8 +76,16 @@ public:
 	TMap<vertex*, TArray<vertex*>> adjacentVertices;
 	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices;
 
-	TArray<FVector> verticeLocations;
-	TArray<int> triangles;
+	TArray<TArray<FVector>> verticeLocations;
+	TArray<TArray<int>> triangles;
+	TArray<FIntVector> trianglesBy3s;
+	TArray<TArray<FVector2D>> uv0s;
+	TArray<FIntVector> waterTrianglesBy3s;
+	TArray<FIntVector> landTrianglesBy3s;
+
+	TArray<FVector> allVerticeLocations;
+	TArray<int> allTriangles;
+	TArray<FVector2D> allUv0s;
 
 	static bool IsTriangle(face* face_in);
 	static bool IsPentagon(face* face_in);

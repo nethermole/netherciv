@@ -26,19 +26,54 @@ public:
 
 
 	void CreateGlobeDcel(int subdivisions);
-
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int faceCount;
 
 	//UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	//TSubclassOf<ASpherePoint> spherePoint;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TArray<FVector> verticeLocations;
+	UFUNCTION(BlueprintCallable)
+	TArray<FVector> GetAllVerticeLocations();
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TArray<int> triangles;
+	UFUNCTION(BlueprintCallable)
+	TArray<int> GetAllTriangles();
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TArray<FVector2D> UV0;
+	UFUNCTION(BlueprintCallable)
+	TArray<FIntVector> GetAllTrianglesBy3s();
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FIntVector> GetAllWaterTrianglesBy3s();
+	UFUNCTION(BlueprintCallable)
+	TArray<FIntVector> GetAllLandTrianglesBy3s();
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FVector2D> GetAllUV0();
+
+	TArray<FVector> allVerticeLocations;
+	TArray<int> allTriangles;
+	TArray<FIntVector> allTrianglesBy3s;
+	TArray<FIntVector> waterTriangles;
+	TArray<FIntVector> landTriangles;
+	TArray<FVector2D> allUV0;
+
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FVector> GetVerticeLocationsByFaceIndex(int index);
+
+
+
+	TArray<TArray<FVector>> verticeLocations;
+
+	UFUNCTION(BlueprintCallable)
+	TArray<int> GetTrianglesByFaceIndex(int index);
+
+	TArray<TArray<int>> triangles;
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FVector2D> getUV0ByFaceIndex(int index);
+
+	TArray<TArray<FVector2D>> uv0s;
 
 	DoublyConnectedEdgeList* dcel;
 
