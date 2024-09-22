@@ -53,7 +53,6 @@ public:
 	void Subdivide();
 	TArray<vertex*> GenerateHexGlobeVertices();
 	void DoClockwiseAssignment(bool isHexGlobe);
-	void DoClockwiseAssignmentImpl2(bool isHexGlobe);
 
 	void GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices_param);
 

@@ -4,6 +4,7 @@
 #include "DoublyConnectedEdgeList.h"
 #include "Util.h"
 #include "KDTree.h"
+#include "BMPImage.h"
 
 DoublyConnectedEdgeList::DoublyConnectedEdgeList()
 {
@@ -204,10 +205,36 @@ bool DoublyConnectedEdgeList::IsHexagon(face* face_in) {
 //UV0s not working
 void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 {
+
+	//save bitmap
+	int bmpWidth = 640;
+	int bmpHeight = 480;
+
+	BMPImage bmpImage(bmpWidth, bmpHeight);
+
+	for (int y = 0; y < bmpHeight; y++) {
+		for (int x = 0; x < bmpWidth; x++) {
+			bmpImage.SetColor(Color((float)x / (float)bmpWidth, 1.0f - ((float)x / (float)bmpWidth), (float)y / (float)bmpHeight), x, y);
+		}
+	}
+	UE_LOG(LogTemp, Display, TEXT("Saving bitmap"));
+	//bmpImage.Export("C:/temp/subd/myOutputImage.bmp");
+	UE_LOG(LogTemp, Display, TEXT("Done saving file"));
+
+	
+	//load bitmap
+	BMPImage copy(0, 0);	//you can make a default constructor...
+	copy.Read("C:/temp/subd/equirectangularProjection.bmp");
+	//copy.Export("C:/temp/subd/equirectangularProjectionButCopied.bmp");
+
+
+	//original implementation
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s)
 
 	verticeLocations = {};
 	triangles = {};
+
+	UE_LOG(LogTemp, Display, TEXT("Total faces: %d"), faces.Num());
 
 	for (face* faceRef : faces) {
 		TArray<FVector> faceVertices = {};
@@ -471,11 +498,6 @@ void DoublyConnectedEdgeList::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, 
 			faces.Add(newFace);
 		}
 	}
-}
-
-void DoublyConnectedEdgeList::DoClockwiseAssignmentImpl2(bool isHexGlobe) {
-	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::DoClockwiseAssignment)
-		return;
 }
 
 void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
