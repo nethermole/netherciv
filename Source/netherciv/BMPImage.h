@@ -30,6 +30,9 @@ public:
 	void Read(const char* path);
 	void Export(const char* path);
 
+	int getWidth();
+	int getHeight();
+
 private:
 	int m_width;
 	int m_height;

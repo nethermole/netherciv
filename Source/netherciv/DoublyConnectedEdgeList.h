@@ -95,4 +95,7 @@ public:
 
 	void WriteToFile(int subd);
 	void ReadFromFile(int subd);
+
+private:
+	int UE_DIST_GLOBE_RADIUS;
 };

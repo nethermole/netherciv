@@ -20,7 +20,7 @@ AProceduralGlobe::AProceduralGlobe()
 void AProceduralGlobe::GenerateWorld() 
 {
 	DoublyConnectedEdgeList* dcel2 = new DoublyConnectedEdgeList();
-	dcel2->ReadFromFile(1);
+	dcel2->ReadFromFile(8);
 	dcel2->PrepareVerticeLocationsAndTrianglesAndUV0s();
 
 	faceCount = dcel2->faces.Num();
@@ -38,9 +38,10 @@ void AProceduralGlobe::GenerateWorld()
 
 	
 
-
-	//CreateGlobeDcel(9);
-	//dcel->WriteToFile(9);
+	//for (int subs = 0; subs < 9; subs++) {
+	//	CreateGlobeDcel(subs);
+	//	dcel->WriteToFile(subs);
+	//}
 
 }
 

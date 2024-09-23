@@ -8,6 +8,7 @@
 
 DoublyConnectedEdgeList::DoublyConnectedEdgeList()
 {
+	UE_DIST_GLOBE_RADIUS = 1000;
 }
 
 DoublyConnectedEdgeList::~DoublyConnectedEdgeList()
@@ -207,25 +208,26 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 {
 
 	//save bitmap
-	int bmpWidth = 640;
-	int bmpHeight = 480;
+	//int bmpWidth = 640;
+	//int bmpHeight = 480;
 
-	BMPImage bmpImage(bmpWidth, bmpHeight);
+	//BMPImage bmpImage(bmpWidth, bmpHeight);
 
-	for (int y = 0; y < bmpHeight; y++) {
-		for (int x = 0; x < bmpWidth; x++) {
-			bmpImage.SetColor(Color((float)x / (float)bmpWidth, 1.0f - ((float)x / (float)bmpWidth), (float)y / (float)bmpHeight), x, y);
-		}
-	}
-	UE_LOG(LogTemp, Display, TEXT("Saving bitmap"));
-	//bmpImage.Export("C:/temp/subd/myOutputImage.bmp");
-	UE_LOG(LogTemp, Display, TEXT("Done saving file"));
+	//for (int y = 0; y < bmpHeight; y++) {
+	//	for (int x = 0; x < bmpWidth; x++) {
+	//		bmpImage.SetColor(Color((float)x / (float)bmpWidth, 1.0f - ((float)x / (float)bmpWidth), (float)y / (float)bmpHeight), x, y);
+	//	}
+	//}
+	//UE_LOG(LogTemp, Display, TEXT("Saving bitmap"));
+	////bmpImage.Export("C:/temp/subd/myOutputImage.bmp");
+	//UE_LOG(LogTemp, Display, TEXT("Done saving file"));
 
 	
 	//load bitmap
-	BMPImage copy(0, 0);	//you can make a default constructor...
-	copy.Read("C:/temp/subd/equirectangularProjection.bmp");
+	BMPImage globeImage(0, 0);	//you can make a default constructor...
+	globeImage.Read("C:/temp/subd/equirectangularProjection_cropped.bmp");
 	//copy.Export("C:/temp/subd/equirectangularProjectionButCopied.bmp");
+
 
 
 	//original implementation
@@ -257,8 +259,11 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 			faceTriangles.Add(faceVerticesNum);	//middle of face
 		}
 
+
 		TArray<FVector2D> faceUv0s = {};
 		for (int i = 0; i < faceVertices.Num(); i++) {
+
+			//original thing
 			bool water = rand() % 2 == 0;
 			if (water) {
 				faceUv0s.Add(FVector2D(0.01 * (i + 1), 0.01 * (i + 1)));
@@ -277,7 +282,6 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 		allTriangles.Append(faceTriangles);
 		allUv0s.Append(faceUv0s);
 	}
-
 
 
 
@@ -310,7 +314,41 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 			midpoint /= faceRef->reps.Num();
 			allVerticeLocations.Add(midpoint);
 
-			bool water = rand() % 2 == 0;
+
+			//Start new thing
+			//new thing
+			float atanX = atan(midpoint.Y / midpoint.X);
+			float radiansAroundGlobe;
+			UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, atan:%f"), midpoint.X, midpoint.Y, FMath::RadiansToDegrees(atanX));
+			if (midpoint.Y > 0 && midpoint.X > 0) {
+				radiansAroundGlobe = atanX;
+			}
+			else if (midpoint.Y > 0 && midpoint.X < 0) {
+				radiansAroundGlobe = UE_PI + atanX;
+			}
+			else if (midpoint.Y < 0 && midpoint.X < 0) {
+				radiansAroundGlobe = UE_PI + atanX;
+			}
+			else if (midpoint.Y < 0 && midpoint.X > 0) {
+				radiansAroundGlobe = (2*UE_PI) + atanX;
+			}
+			else {
+				UE_LOG(LogTemp, Display, TEXT("How this happen? x:%f, y:%f"), midpoint.X, midpoint.Y);
+			}
+			float percentRadiallyAroundGlobe = radiansAroundGlobe / (2 * UE_PI);
+			UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, degreesAroundGlobe:%f, percentRadiallyAroundGlobe:%f"), midpoint.X, midpoint.Y, FMath::RadiansToDegrees(radiansAroundGlobe), percentRadiallyAroundGlobe);
+			int pixelX = globeImage.getWidth() * (1.0f-percentRadiallyAroundGlobe);	//gotta invert x-axis
+
+			float percentLinearlyUpGlobe = (midpoint.Z + UE_DIST_GLOBE_RADIUS) / (UE_DIST_GLOBE_RADIUS * 2);	//weird math because the southern hemisphere has negative Z-coord
+			int pixelY = globeImage.getHeight() * percentLinearlyUpGlobe;
+
+			UE_LOG(LogTemp, Display, TEXT("Z:%f, percZ:%f"), midpoint.Z, percentLinearlyUpGlobe);
+
+			Color mapPointHexColor = globeImage.GetColor(pixelX, pixelY);
+			bool water = mapPointHexColor.r > 0.95;
+			//End new thing
+
+			//bool water = rand() % 2 == 0;
 
 			for (int i = 0; i < faceRef->reps.Num(); i++) {
 				half_edge* edge = faceRef->reps[i];
@@ -697,10 +735,16 @@ void DoublyConnectedEdgeList::LoadIcosahedronCartesianCoordinates() {
 		}
 	};
 
+
+
 	vertices = {};
 	originalVertices = {};
 
 	TArray<TArray<FVector>> v = {};	//vertex locations
+
+	//calculate rotation so we have a north pole vertice
+	float northPoleRotation = atan(1.0 / UE_DOUBLE_GOLDEN_RATIO);
+	UE_LOG(LogTemp, Display, TEXT("north pole rotation calculated to be %f degrees"), FMath::RadiansToDegrees(northPoleRotation));
 
 	int counter = 0;
 	for (int matrix = 0; matrix < 3; matrix++) {
@@ -719,8 +763,8 @@ void DoublyConnectedEdgeList::LoadIcosahedronCartesianCoordinates() {
 					double zCoord = zCoords[z];
 
 					FVector verticeLocation = FVector(xCoord, yCoord, zCoord);
-					//verticeLocation = Util::RotateRelativeToVectorAndQuat(verticeLocation, FVector(0, 0, 0), FQuat(FVector::YAxisVector, FMath::DegreesToRadians(DIHEDRAL_ANGLE / 2)));
-					verticeLocation = Util::GetVectorAtDistance(verticeLocation, 1000);
+					verticeLocation = Util::RotateRelativeToVectorAndQuat(verticeLocation, FVector(0, 0, 0), FQuat(FVector::YAxisVector, (PI/2)-northPoleRotation));
+					verticeLocation = Util::GetVectorAtDistance(verticeLocation, UE_DIST_GLOBE_RADIUS);
 					v[matrix].Add(verticeLocation);
 
 					//ASpherePoint* newSpherePoint = GetWorld()->SpawnActor<ASpherePoint>(spherePoint, FTransform(verticeLocation));

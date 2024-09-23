@@ -200,6 +200,16 @@ void BMPImage::Export(const char* path)
 	UE_LOG(LogTemp, Display, TEXT("File created"));
 }
 
+int BMPImage::getWidth()
+{
+	return m_width;
+}
+
+int BMPImage::getHeight()
+{
+	return m_height;
+}
+
 Color::Color() : r(0), g(0), b(0)
 {
 }
