@@ -2,9 +2,9 @@
 
 
 #include "DoublyConnectedEdgeList.h"
-#include "Util.h"
+#include "netherciv/util/Util.h"
 #include "KDTree.h"
-#include "BMPImage.h"
+#include "netherciv/bitmap/BMPImage.h"
 
 DoublyConnectedEdgeList::DoublyConnectedEdgeList()
 {
@@ -204,7 +204,7 @@ bool DoublyConnectedEdgeList::IsHexagon(face* face_in) {
 }
 
 //UV0s not working
-void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
+void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 {
 
 	//save bitmap
@@ -276,18 +276,15 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s()
 
 		verticeLocations.Add(faceVertices);
 		triangles.Add(faceTriangles);
-		uv0s.Add(faceUv0s);
 
 		allVerticeLocations.Append(faceVertices);
 		allTriangles.Append(faceTriangles);
-		allUv0s.Append(faceUv0s);
 	}
 
 
 
 	allVerticeLocations = {};
 	allTriangles = {};
-	allUv0s = {};
 
 	allVerticeLocations = {};
 	for (int i = 0; i < vertices.Num(); i++) {

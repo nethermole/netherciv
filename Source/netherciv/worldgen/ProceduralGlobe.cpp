@@ -3,11 +3,9 @@
 
 #include "ProceduralGlobe.h"
 
-#include "Util.h"
+#include "netherciv/util/Util.h"
 
 #include "math.h"
-
-#define DIHEDRAL_ANGLE 116.56505
 
 // Sets default values
 AProceduralGlobe::AProceduralGlobe()
@@ -17,27 +15,30 @@ AProceduralGlobe::AProceduralGlobe()
 
 }
 
-void AProceduralGlobe::GenerateWorld() 
+void AProceduralGlobe::GenerateWorld(int subdivisions) 
 {
-	DoublyConnectedEdgeList* dcel2 = new DoublyConnectedEdgeList();
-	dcel2->ReadFromFile(4);
-	dcel2->PrepareVerticeLocationsAndTrianglesAndUV0s();
+	DoublyConnectedEdgeList* dcel = new DoublyConnectedEdgeList();
+	if (subdivisions > 8) {
+		UE_LOG(LogTemp, Display, TEXT("Cannot generate world with more than 8 subdivisions yet"));
+		return;
+	}
+	dcel->ReadFromFile(subdivisions);
+	dcel->PrepareVerticeLocationsAndTriangles();
 
-	faceCount = dcel2->faces.Num();
+	faceCount = dcel->faces.Num();
 
-	verticeLocations = dcel2->verticeLocations;
-	triangles = dcel2->triangles;
-	uv0s = dcel2->uv0s;
-	allTrianglesBy3s = dcel2->trianglesBy3s;
-	waterTriangles = dcel2->waterTrianglesBy3s;
-	landTriangles = dcel2->landTrianglesBy3s;
+	verticeLocations = dcel->verticeLocations;
+	triangles = dcel->triangles;
 
-	allVerticeLocations = dcel2->allVerticeLocations;
-	allTriangles = dcel2->allTriangles;
-	allUV0 = dcel2->allUv0s;
+	allTrianglesBy3s = dcel->trianglesBy3s;
+	waterTriangles = dcel->waterTrianglesBy3s;
+	landTriangles = dcel->landTrianglesBy3s;
+
+	allVerticeLocations = dcel->allVerticeLocations;
+	allTriangles = dcel->allTriangles;
 
 	
-
+//Use this to generate new files to read
 	//for (int subs = 0; subs < 9; subs++) {
 	//	CreateGlobeDcel(subs);
 	//	dcel->WriteToFile(subs);
@@ -55,28 +56,28 @@ void AProceduralGlobe::GenerateWorld()
 	//4a) For each endpoint, sort the half - edges whose tail vertex is that endpoint in clockwise order.
 	//4b) For every pair of half - edges e1, e2 in clockwise order, assign e1->twin->next = e2 and e2->prev = e1->twin
 //5)For every cycle, allocate and assign a face structure.
-void AProceduralGlobe::CreateGlobeDcel(int subdivisions)
+void AProceduralGlobe::CALCULATEGLOBE_CreateGlobeDcel(int subdivisions)
 {
 	TRACE_BOOKMARK(TEXT("CreateGlobeDcel bookmark"))
-	TRACE_CPUPROFILER_EVENT_SCOPE(AProceduralGlobe::CreateGlobeDcel)
+	TRACE_CPUPROFILER_EVENT_SCOPE(AProceduralGlobe::CALCULATEGLOBE_CreateGlobeDcel)
 //Load the subdivided icosahedron
-	dcel = new DoublyConnectedEdgeList();
+	dcel_property = new DoublyConnectedEdgeList();
 
-	dcel->LoadIcosahedronCartesianCoordinates();	//1
-	dcel->CalculateHalfEdges(false);		//2
+	dcel_property->LoadIcosahedronCartesianCoordinates();	//1
+	dcel_property->CalculateHalfEdges(false);		//2
 
 	for (int subdivCount = 0; subdivCount < subdivisions; subdivCount++) {	//3
-		dcel->Subdivide();
-		dcel->CalculateHalfEdges(false);
+		dcel_property->Subdivide();
+		dcel_property->CalculateHalfEdges(false);
 	}
-	dcel->DoClockwiseAssignment(false);		//4
-	dcel->GetFacesFromHalfEdges(dcel->halfEdgesBetweenVertices);	//5
+	dcel_property->DoClockwiseAssignment(false);		//4
+	dcel_property->GetFacesFromHalfEdges(dcel_property->halfEdgesBetweenVertices);	//5
 
 
 //To hexes
-	DoublyConnectedEdgeList* hexDcel = dcel->CreateGoldbergPolyhedronFromSubdividedIcosahedron();
-	hexDcel->PrepareVerticeLocationsAndTrianglesAndUV0s();
-	dcel = hexDcel;
+	DoublyConnectedEdgeList* hexDcel = dcel_property->CreateGoldbergPolyhedronFromSubdividedIcosahedron();
+	hexDcel->PrepareVerticeLocationsAndTriangles();
+	dcel_property = hexDcel;
 }
 
 TArray<FVector> AProceduralGlobe::GetAllVerticeLocations()

@@ -64,11 +64,10 @@ public:
 
 	void CalculateHalfEdges(bool isHexGlobe);
 
-	void PrepareVerticeLocationsAndTrianglesAndUV0s();
+	void PrepareVerticeLocationsAndTriangles();
 
 	TArray<vertex*> vertices;
 	TSet<vertex*> originalVertices;
-	TArray<FVector2D> UV0;
 
 	TArray<face*> faces;
 
@@ -78,13 +77,12 @@ public:
 	TArray<TArray<FVector>> verticeLocations;
 	TArray<TArray<int>> triangles;
 	TArray<FIntVector> trianglesBy3s;
-	TArray<TArray<FVector2D>> uv0s;
+
 	TArray<FIntVector> waterTrianglesBy3s;
 	TArray<FIntVector> landTrianglesBy3s;
 
 	TArray<FVector> allVerticeLocations;
 	TArray<int> allTriangles;
-	TArray<FVector2D> allUv0s;
 
 	static bool IsTriangle(face* face_in);
 	static bool IsPentagon(face* face_in);

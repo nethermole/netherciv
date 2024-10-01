@@ -5,8 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 
-#include "SpherePoint.h"
-#include "DoublyConnectedEdgeList.h"
+#include "netherciv/util/SpherePoint.h"
+#include "netherciv/datastructures/DoublyConnectedEdgeList.h"
 
 #include "ProceduralGlobe.generated.h"
 
@@ -22,10 +22,10 @@ public:
 	AProceduralGlobe();
 
 	UFUNCTION(BlueprintCallable)
-	void GenerateWorld();
+	void GenerateWorld(int subdivisions);
 
 
-	void CreateGlobeDcel(int subdivisions);
+	void CALCULATEGLOBE_CreateGlobeDcel(int subdivisions);
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int faceCount;
@@ -75,7 +75,7 @@ public:
 
 	TArray<TArray<FVector2D>> uv0s;
 
-	DoublyConnectedEdgeList* dcel;
+	DoublyConnectedEdgeList* dcel_property;
 
 
 protected:
