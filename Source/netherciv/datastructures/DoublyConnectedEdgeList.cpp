@@ -206,87 +206,22 @@ bool DoublyConnectedEdgeList::IsHexagon(face* face_in) {
 //UV0s not working
 void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 {
-
-	//save bitmap
-	//int bmpWidth = 640;
-	//int bmpHeight = 480;
-
-	//BMPImage bmpImage(bmpWidth, bmpHeight);
-
-	//for (int y = 0; y < bmpHeight; y++) {
-	//	for (int x = 0; x < bmpWidth; x++) {
-	//		bmpImage.SetColor(Color((float)x / (float)bmpWidth, 1.0f - ((float)x / (float)bmpWidth), (float)y / (float)bmpHeight), x, y);
-	//	}
-	//}
-	//UE_LOG(LogTemp, Display, TEXT("Saving bitmap"));
-	////bmpImage.Export("C:/temp/subd/myOutputImage.bmp");
-	//UE_LOG(LogTemp, Display, TEXT("Done saving file"));
-
+	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles)
 	
 	//load bitmap
 	BMPImage globeImage(0, 0);	//you can make a default constructor...
 	globeImage.Read("C:/temp/subd/equirectangularProjection_cropped.bmp");
-	//copy.Export("C:/temp/subd/equirectangularProjectionButCopied.bmp");
 
-
-
-	//original implementation
-	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::PrepareVerticeLocationsAndTrianglesAndUV0s)
 
 	verticeLocations = {};
 	triangles = {};
 
 	UE_LOG(LogTemp, Display, TEXT("Total faces: %d"), faces.Num());
 
-	for (face* faceRef : faces) {
-		TArray<FVector> faceVertices = {};
-
-		FVector midpoint = FVector(0, 0, 0);
-		for (int i = 0; i < faceRef->reps.Num(); i++) {
-			faceVertices.Add(faceRef->reps[i]->tail->location);
-
-			midpoint += faceRef->reps[i]->tail->location;
-		}
-		midpoint /= faceRef->reps.Num();
-
-		int faceVerticesNum = faceVertices.Num();
-		faceVertices.Add(midpoint);
-
-		TArray<int> faceTriangles = {};
-		for (int i = 0; i < faceVerticesNum; i++) {
-			faceTriangles.Add(i);
-			faceTriangles.Add((i + 1) % faceVerticesNum);
-			faceTriangles.Add(faceVerticesNum);	//middle of face
-		}
-
-
-		TArray<FVector2D> faceUv0s = {};
-		for (int i = 0; i < faceVertices.Num(); i++) {
-
-			//original thing
-			bool water = rand() % 2 == 0;
-			if (water) {
-				faceUv0s.Add(FVector2D(0.01 * (i + 1), 0.01 * (i + 1)));
-			}
-			else {
-				faceUv0s.Add(FVector2D((0.01 * (i + 1)) + 0.6, (0.01 * (i + 1)) + 0.6));
-			}
-			
-		}
-
-		verticeLocations.Add(faceVertices);
-		triangles.Add(faceTriangles);
-
-		allVerticeLocations.Append(faceVertices);
-		allTriangles.Append(faceTriangles);
-	}
-
-
 
 	allVerticeLocations = {};
 	allTriangles = {};
 
-	allVerticeLocations = {};
 	for (int i = 0; i < vertices.Num(); i++) {
 		vertices[i]->verticesIndex = i;
 		allVerticeLocations.Add(vertices[i]->location);
@@ -312,8 +247,7 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 			allVerticeLocations.Add(midpoint);
 
 
-			//Start new thing
-			//new thing
+			//Start determining if water
 			float atanX = atan(midpoint.Y / midpoint.X);
 			float radiansAroundGlobe;
 			UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, atan:%f"), midpoint.X, midpoint.Y, FMath::RadiansToDegrees(atanX));
@@ -343,9 +277,7 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 
 			Color mapPointHexColor = globeImage.GetColor(pixelX, pixelY);
 			bool water = mapPointHexColor.r > 0.95;
-			//End new thing
-
-			//bool water = rand() % 2 == 0;
+			//End getting water
 
 			for (int i = 0; i < faceRef->reps.Num(); i++) {
 				half_edge* edge = faceRef->reps[i];

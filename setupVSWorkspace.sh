@@ -1,1 +1,0 @@
-cp ./filtersOverride.xml ./Intermediate/ProjectFiles/netherciv.vcxproj.filters

@@ -17,7 +17,7 @@ AProceduralGlobe::AProceduralGlobe()
 
 void AProceduralGlobe::GenerateWorld(int subdivisions) 
 {
-	DoublyConnectedEdgeList* dcel = new DoublyConnectedEdgeList();
+	dcel = new DoublyConnectedEdgeList();
 	if (subdivisions > 8) {
 		UE_LOG(LogTemp, Display, TEXT("Cannot generate world with more than 8 subdivisions yet"));
 		return;
@@ -27,17 +27,6 @@ void AProceduralGlobe::GenerateWorld(int subdivisions)
 
 	faceCount = dcel->faces.Num();
 
-	verticeLocations = dcel->verticeLocations;
-	triangles = dcel->triangles;
-
-	allTrianglesBy3s = dcel->trianglesBy3s;
-	waterTriangles = dcel->waterTrianglesBy3s;
-	landTriangles = dcel->landTrianglesBy3s;
-
-	allVerticeLocations = dcel->allVerticeLocations;
-	allTriangles = dcel->allTriangles;
-
-	
 //Use this to generate new files to read
 	//for (int subs = 0; subs < 9; subs++) {
 	//	CreateGlobeDcel(subs);
@@ -82,51 +71,18 @@ void AProceduralGlobe::CALCULATEGLOBE_CreateGlobeDcel(int subdivisions)
 
 TArray<FVector> AProceduralGlobe::GetAllVerticeLocations()
 {
-	return allVerticeLocations;
-}
-
-TArray<int> AProceduralGlobe::GetAllTriangles()
-{
-	return allTriangles;
-}
-
-TArray<FIntVector> AProceduralGlobe::GetAllTrianglesBy3s()
-{
-	return allTrianglesBy3s;
+	return dcel->allVerticeLocations;
 }
 
 TArray<FIntVector> AProceduralGlobe::GetAllWaterTrianglesBy3s()
 {
-	return waterTriangles;
+	return dcel->waterTrianglesBy3s;
 }
 
 TArray<FIntVector> AProceduralGlobe::GetAllLandTrianglesBy3s()
 {
-	return landTriangles;
+	return dcel->landTrianglesBy3s;
 }
-
-TArray<FVector2D> AProceduralGlobe::GetAllUV0()
-{
-	return allUV0;
-}
-
-TArray<FVector> AProceduralGlobe::GetVerticeLocationsByFaceIndex(int index)
-{
-	return verticeLocations[index];
-}
-
-TArray<int> AProceduralGlobe::GetTrianglesByFaceIndex(int index)
-{
-	return triangles[index];
-}
-
-TArray<FVector2D> AProceduralGlobe::getUV0ByFaceIndex(int index)
-{
-	return uv0s[index];
-}
-
-
-
 
 
 // Called when the game starts or when spawned
