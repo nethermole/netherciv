@@ -3,9 +3,9 @@
 
 #include "ProceduralGlobe.h"
 
-#include "netherciv/util/Util.h"
-
 #include "math.h"
+
+#include "netherciv/util/Util.h"
 
 // Sets default values
 AProceduralGlobe::AProceduralGlobe()

@@ -74,8 +74,6 @@ public:
 	TMap<vertex*, TArray<vertex*>> adjacentVertices;
 	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices;
 
-	TArray<TArray<FVector>> verticeLocations;
-	TArray<TArray<int>> triangles;
 	TArray<FIntVector> trianglesBy3s;
 
 	TArray<FIntVector> waterTrianglesBy3s;

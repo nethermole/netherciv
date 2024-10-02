@@ -2,8 +2,9 @@
 
 
 #include "DoublyConnectedEdgeList.h"
-#include "netherciv/util/Util.h"
 #include "KDTree.h"
+
+#include "netherciv/util/Util.h"
 #include "netherciv/bitmap/BMPImage.h"
 
 DoublyConnectedEdgeList::DoublyConnectedEdgeList()
@@ -212,9 +213,6 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 	BMPImage globeImage(0, 0);	//you can make a default constructor...
 	globeImage.Read("C:/temp/subd/equirectangularProjection_cropped.bmp");
 
-
-	verticeLocations = {};
-	triangles = {};
 
 	UE_LOG(LogTemp, Display, TEXT("Total faces: %d"), faces.Num());
 
