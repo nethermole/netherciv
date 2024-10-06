@@ -5,8 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 
-#include "netherciv/util/SpherePoint.h"
 #include "netherciv/datastructures/DoublyConnectedEdgeList.h"
+#include "netherciv/worldgen/KyleGlobeGen.h"
+#include "netherciv/worldgen/dad/DadGlobeGen.h"
 
 #include "ProceduralGlobe.generated.h"
 
@@ -23,9 +24,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void GenerateWorld(int subdivisions);
-
-
-	void CALCULATEGLOBE_CreateGlobeDcel(int subdivisions);
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int faceCount;
@@ -41,8 +39,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	TArray<FIntVector> GetAllLandTrianglesBy3s();
 
+	UFUNCTION(BlueprintCallable)
+	void GenerateKyleGlobeGenFilesUpToNSubdivisions(int subdivisions);
+
+	UFUNCTION(BlueprintCallable)
+	void GenerateDadGlobeGenAtNSubdivisions(int subdivisions);
 
 	DoublyConnectedEdgeList* dcel_property;
+
+	KyleGlobeGen* kyleGlobeGen;
+	DadGlobeGen* dadGlobeGen;
 
 
 protected:

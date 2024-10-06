@@ -188,6 +188,7 @@ void DoublyConnectedEdgeList::WriteToFile(int subd)
 
 	FString fpath = "C:/temp/subd";
 	fpath += FString::FromInt(subd);
+	fpath += FString("-testing");
 	fpath += ".txt";
 
 	FString FilePath = FPaths::ConvertRelativePathToFull(fpath);
