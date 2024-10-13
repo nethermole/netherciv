@@ -91,6 +91,21 @@ void DadGlobeGen::TwelvePents()
 	Faces[12] = new Face(15, 19, 20, 17, 16, 8, 11, 10, 9, 5);
 }
 
+TArray<FVector> DadGlobeGen::GetAllVerticeLocations() {
+	TArray<FVector> vectors = {};
+	vectors.Add(FVector());
+
+	for (int i = 1; i < Vertices.size(); i++) {
+		vectors.Add(FVector(
+			Vertices[i]->xLoc,
+			Vertices[i]->yLoc,
+			Vertices[i]->zLoc
+		));
+	}
+
+	return vectors;
+}
+
 void DadGlobeGen::PrintVerts(std::vector<Vertex*> V)
 {
 	int i;
@@ -102,27 +117,64 @@ void DadGlobeGen::PrintVerts(std::vector<Vertex*> V)
 
 void DadGlobeGen::PrintFaces(std::vector<Face*> F)
 {
-	int i, j;
-	UE_LOG(LogTemp, Display, TEXT("Vertex and adjacent side indices for %d faces:\nindex, adjacentVertexCount, adjacentVertices, adjacentEdges"), F[1]->Nfaces);
-	for (i = 1; i <= F[1]->Nfaces; i++) {
-		UE_LOG(LogTemp, Display, TEXT("%7d, %2d; "), i, F[i]->edges);
-		for (j = 1; j <= 6; j++) {
-			if (F[i]->Verts[j] > 0) { UE_LOG(LogTemp, Display, TEXT("%5d,"), F[i]->Verts[j]); }
-			else { UE_LOG(LogTemp, Display, TEXT("   - ,")); }
-		}
-		UE_LOG(LogTemp, Display, TEXT("   "));
-		for (j = 1; j <= 6; j++) {
-			if (F[i]->Adjacent[j] > 0) { UE_LOG(LogTemp, Display, TEXT("%5d,"), F[i]->Adjacent[j]); }
-			else { UE_LOG(LogTemp, Display, TEXT("   - ,")); }
+	UE_LOG(LogTemp, Display, TEXT("\nVertex and Adjacent face indices for %d faces:"), F[1]->Nfaces);
+	for (int i = 1; i <= F[1]->Nfaces; i++) {
+		Face* face = F[i];
+
+		for (int edgeIndex = 0; edgeIndex < face->edges; edgeIndex++) {
+			if (face->edges == 5) {
+				UE_LOG(LogTemp, Display, TEXT("%d - %d %d %d %d %d   - %d %d %d %d %d  "),
+					i,
+					face->Verts[1],
+					face->Verts[2],
+					face->Verts[3],
+					face->Verts[4],
+					face->Verts[5],
+					face->Adjacent[1],
+					face->Adjacent[2],
+					face->Adjacent[3],
+					face->Adjacent[4],
+					face->Adjacent[5]
+				);
+			}
+			else if (face->edges == 6) {
+				UE_LOG(LogTemp, Display, TEXT("%d - %d %d %d %d %d %d - %d %d %d %d %d %d"),
+					i,
+					face->Verts[1],
+					face->Verts[2],
+					face->Verts[3],
+					face->Verts[4],
+					face->Verts[5],
+					face->Verts[6],
+					face->Adjacent[1],
+					face->Adjacent[2],
+					face->Adjacent[3],
+					face->Adjacent[4],
+					face->Adjacent[5],
+					face->Adjacent[6]
+				);
+			}
 		}
 
-		UE_LOG(LogTemp, Display, TEXT("   "));
-		for (j = 1; j <= 6; j++) {
-			UE_LOG(LogTemp, Display, TEXT("%2d,"), F[i]->Flags[j]);
-		}
-		UE_LOG(LogTemp, Display, TEXT("   "));
-		UE_LOG(LogTemp, Display, TEXT("%6.3f, %6.3f, %6.3f"), F[i]->NormX, F[i]->NormY, F[i]->NormZ);
 
-		UE_LOG(LogTemp, Display, TEXT(""));
+		//UE_LOG(LogTemp, Display, TEXT("%7d, %2d; "), i, F[i]->edges);
+		//for (j = 1; j <= 6; j++) {
+		//	if (F[i]->Verts[j] > 0) { UE_LOG(LogTemp, Display, TEXT("%5d,"), F[i]->Verts[j]); }
+		//	else { UE_LOG(LogTemp, Display, TEXT("   - ,")); }
+		//}
+		//UE_LOG(LogTemp, Display, TEXT("   "));
+		//for (j = 1; j <= 6; j++) {
+		//	if (F[i]->Adjacent[j] > 0) { UE_LOG(LogTemp, Display, TEXT("%5d,"), F[i]->Adjacent[j]); }
+		//	else { UE_LOG(LogTemp, Display, TEXT("   - ,")); }
+		//}
+
+		//UE_LOG(LogTemp, Display, TEXT("   "));
+		//for (j = 1; j <= 6; j++) {
+		//	UE_LOG(LogTemp, Display, TEXT("%2d,"), F[i]->Flags[j]);
+		//}
+		//UE_LOG(LogTemp, Display, TEXT("   "));
+		//UE_LOG(LogTemp, Display, TEXT("%6.3f, %6.3f, %6.3f"), F[i]->NormX, F[i]->NormY, F[i]->NormZ);
+
+		//UE_LOG(LogTemp, Display, TEXT(""));
 	}
 }

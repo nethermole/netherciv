@@ -14,6 +14,10 @@ Vertex::Vertex(double x, double y, double z)
 	Vertex::Nverts = Vertex::Nverts + 1;
 }
 
+FVector Vertex::ToVector() {
+	return FVector(xLoc, yLoc, zLoc);
+}
+
 Vertex::Vertex()
 {
 	xLoc = 0;

@@ -21,5 +21,5 @@ public:
 	double zLoc;
 
 	void Middle(Vertex* P1, double X, double Y, double Z);
-
+	FVector ToVector();
 };

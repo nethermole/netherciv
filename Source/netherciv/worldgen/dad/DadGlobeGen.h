@@ -21,6 +21,8 @@ public:
 
 	void Prepare(int subdivisions);
 
+	TArray<FVector> GetAllVerticeLocations();
+
 	static void PrintVerts(std::vector<Vertex*> V);
 	static void PrintFaces(std::vector<Face*> F);
 
