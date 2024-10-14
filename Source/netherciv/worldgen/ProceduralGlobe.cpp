@@ -30,18 +30,19 @@ void AProceduralGlobe::GenerateWorld(int subdivisions)
 
 TArray<FVector> AProceduralGlobe::GetAllVerticeLocations()
 {
-	//return kyleGlobeGen->dcel->allVerticeLocations;
-
-	return dadGlobeGen->GetAllVerticeLocations();
+	//return dadGlobeGen->GetAllVerticeLocations();
+	return kyleGlobeGen->dcel->allVerticeLocations;
 }
 
 TArray<FIntVector> AProceduralGlobe::GetAllWaterTrianglesBy3s()
 {
+	//return dadGlobeGen->GetWaterTrianglesBy3s();
 	return kyleGlobeGen->dcel->waterTrianglesBy3s;
 }
 
 TArray<FIntVector> AProceduralGlobe::GetAllLandTrianglesBy3s()
 {
+	//return dadGlobeGen->GetLandTrianglesBy3s();
 	return kyleGlobeGen->dcel->landTrianglesBy3s;
 }
 

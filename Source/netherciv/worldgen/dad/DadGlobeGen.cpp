@@ -2,18 +2,142 @@
 
 
 #include "netherciv/worldgen/dad/DadGlobeGen.h"
+#include "netherciv/util/Util.h"
 
 #include "cmath"
 #include "chrono"
 
 #include "Kismet/GameplayStatics.h"
 
+
 DadGlobeGen::DadGlobeGen()
 {
+	UE_DIST_GLOBE_RADIUS = 1000;
 }
 
 DadGlobeGen::~DadGlobeGen()
 {
+}
+
+bool DadGlobeGen::isWater(BMPImage& globeImage, FVector midpoint) {
+	//Start determining if water
+	float atanX = atan(midpoint.Y / midpoint.X);
+	float radiansAroundGlobe;
+	//UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, atan:%f"), midpoint.X, midpoint.Y, FMath::RadiansToDegrees(atanX));
+	if (midpoint.Y > 0 && midpoint.X > 0) {
+		radiansAroundGlobe = atanX;
+	}
+	else if (midpoint.Y > 0 && midpoint.X < 0) {
+		radiansAroundGlobe = UE_PI + atanX;
+	}
+	else if (midpoint.Y < 0 && midpoint.X < 0) {
+		radiansAroundGlobe = UE_PI + atanX;
+	}
+	else if (midpoint.Y < 0 && midpoint.X > 0) {
+		radiansAroundGlobe = (2 * UE_PI) + atanX;
+	}
+	else {
+		UE_LOG(LogTemp, Display, TEXT("How this happen? x:%f, y:%f"), midpoint.X, midpoint.Y);
+		return false;
+	}
+	float percentRadiallyAroundGlobe = radiansAroundGlobe / (2 * UE_PI);
+	//UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, degreesAroundGlobe:%f, percentRadiallyAroundGlobe:%f"), midpoint.X, midpoint.Y, FMath::RadiansToDegrees(radiansAroundGlobe), percentRadiallyAroundGlobe);
+	int pixelX = globeImage.getWidth() * (1.0f - percentRadiallyAroundGlobe);	//gotta invert x-axis
+
+	float percentLinearlyUpGlobe = (midpoint.Z + UE_DIST_GLOBE_RADIUS) / (UE_DIST_GLOBE_RADIUS * 2);	//weird math because the southern hemisphere has negative Z-coord
+	int pixelY = globeImage.getHeight() * percentLinearlyUpGlobe;
+
+	//UE_LOG(LogTemp, Display, TEXT("Z:%f, percZ:%f"), midpoint.Z, percentLinearlyUpGlobe);
+
+	Color mapPointHexColor = globeImage.GetColor(pixelX, pixelY);
+	bool water = mapPointHexColor.r > 0.95;
+	//End getting water
+	return water;
+}
+
+void DadGlobeGen::CalculateTrianglesAndCalculateWaterAndLand()
+{
+	UE_LOG(LogTemp, Display, TEXT("Calculating vertices"));
+
+	waterTrianglesBy3s = {};
+	landTrianglesBy3s = {};
+
+	allVerticeLocations = {};
+	allVerticeLocations.Add(FVector());
+
+	for (int i = 1; i < Vertices.size() && (Vertices[i] != NULL); i++) {
+		if (i % 10000 == 0) {
+			UE_LOG(LogTemp, Display, TEXT("vertice %d"), i);
+		}
+
+		allVerticeLocations.Add(
+			Util::GetVectorAtDistance(
+				FVector(
+					Vertices[i]->xLoc,
+					Vertices[i]->yLoc,
+					Vertices[i]->zLoc
+				)
+				, UE_DIST_GLOBE_RADIUS)
+		);
+	}
+
+	UE_LOG(LogTemp, Display, TEXT("Calculating land"));
+
+	BMPImage globeImage(0, 0);	//you can make a default constructor...
+	globeImage.Read("C:/temp/subd/equirectangularProjection_cropped.bmp");
+
+	for (int j = 1; j < Faces.size() && (Faces[j] != NULL); j++){
+		if (j % 10000 == 0) {
+			UE_LOG(LogTemp, Display, TEXT("face %d"), j);
+		}
+
+		Face* face = Faces[j];
+
+		FVector midpoint = FVector(0, 0, 0);
+		for (int i = 1; i <= face->edges; i++) {
+			midpoint += allVerticeLocations[face->Verts[i]];
+		}
+		midpoint /= face->edges;
+		allVerticeLocations.Add(midpoint);
+
+		bool isWater = this->isWater(globeImage, midpoint);
+		for (int i = 1; i <= face->edges; i++) {
+			int nextVert = i + 1;
+			if (nextVert > face->edges) {
+				nextVert = 1;
+			}
+
+			if (isWater) {
+				waterTrianglesBy3s.Add(
+					FIntVector(
+						allVerticeLocations.Num() - 1,
+						face->Verts[i],
+						face->Verts[nextVert]
+					)
+				);
+			}
+			else {
+				landTrianglesBy3s.Add(
+					FIntVector(
+						allVerticeLocations.Num() - 1,
+						face->Verts[i],
+						face->Verts[nextVert]
+					)
+				);
+			}
+
+		}
+	}
+}
+
+TArray<FIntVector> DadGlobeGen::GetWaterTrianglesBy3s()
+{
+	return waterTrianglesBy3s;
+}
+
+TArray<FIntVector> DadGlobeGen::GetLandTrianglesBy3s()
+{
+	return landTrianglesBy3s;
 }
 
 void DadGlobeGen::Prepare(int subdivisions)
@@ -47,9 +171,12 @@ void DadGlobeGen::Prepare(int subdivisions)
 	}
 
 
-	PrintVerts(Vertices);
-	PrintFaces(Faces);
-	UE_LOG(LogTemp, Display, TEXT("DadGlobeGen - Subdivisions(%d) took %d seconds"), subdivisions, static_cast<int>(FPlatformTime::Seconds()-start));
+	//PrintVerts(Vertices);
+	//PrintFaces(Faces);
+	UE_LOG(LogTemp, Display, TEXT("DadGlobeGen - Subdivisions(%d) took %d seconds. Now calculating triangles, land/water..."), subdivisions, static_cast<int>(FPlatformTime::Seconds()-start));
+
+	CalculateTrianglesAndCalculateWaterAndLand();
+	UE_LOG(LogTemp, Display, TEXT("DadGlobeGen - finished"));
 }
 
 void DadGlobeGen::TwelvePents()
@@ -92,18 +219,7 @@ void DadGlobeGen::TwelvePents()
 }
 
 TArray<FVector> DadGlobeGen::GetAllVerticeLocations() {
-	TArray<FVector> vectors = {};
-	vectors.Add(FVector());
-
-	for (int i = 1; i < Vertices.size(); i++) {
-		vectors.Add(FVector(
-			Vertices[i]->xLoc,
-			Vertices[i]->yLoc,
-			Vertices[i]->zLoc
-		));
-	}
-
-	return vectors;
+	return allVerticeLocations;
 }
 
 void DadGlobeGen::PrintVerts(std::vector<Vertex*> V)
