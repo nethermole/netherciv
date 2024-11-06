@@ -10,7 +10,7 @@
 #include "netherciv/worldgen/dad/Vertex.h"
 
 /**
- * 
+ * FUNCTIONAL, BUT HAS MEMORY LEAK. FIX MEMORY LEAK TO USE
  */
 class NETHERCIV_API DadGlobeGen
 {

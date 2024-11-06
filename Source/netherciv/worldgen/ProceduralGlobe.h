@@ -34,6 +34,12 @@ public:
 	TArray<FVector> GetAllVerticeLocations();
 
 	UFUNCTION(BlueprintCallable)
+	TArray<FIntVector> GetTriangleIntVectorsForFaceByIndex(int faceIndex);
+
+	UFUNCTION(BlueprintCallable)
+	bool isFaceWater(int faceIndex);
+
+	UFUNCTION(BlueprintCallable)
 	TArray<FIntVector> GetAllWaterTrianglesBy3s();
 
 	UFUNCTION(BlueprintCallable)
@@ -49,6 +55,12 @@ public:
 
 	KyleGlobeGen* kyleGlobeGen;
 	DadGlobeGen* dadGlobeGen;
+
+	//UFUNCTION(BlueprintCallable)
+	//TArray<FIntVector> GetTrianglesBy3sForFace(int faceIndex);
+
+	UFUNCTION(BlueprintCallable)
+	int GetFaceCount();
 
 
 protected:

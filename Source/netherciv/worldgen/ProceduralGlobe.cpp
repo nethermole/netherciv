@@ -24,14 +24,23 @@ void AProceduralGlobe::GenerateWorld(int subdivisions)
 	//dadGlobeGen->Prepare(subdivisions);
 
 	faceCount = kyleGlobeGen->dcel->faces.Num();
-}
 
+	UE_LOG(LogTemp, Display, TEXT("Done loading world in code, now blueprint time"));
+}
 
 
 TArray<FVector> AProceduralGlobe::GetAllVerticeLocations()
 {
 	//return dadGlobeGen->GetAllVerticeLocations();
 	return kyleGlobeGen->dcel->allVerticeLocations;
+}
+
+TArray<FIntVector> AProceduralGlobe::GetTriangleIntVectorsForFaceByIndex(int faceIndex) {
+	return kyleGlobeGen->dcel->GetTriangleIntVectorsForFaceByIndex(faceIndex);
+}
+
+bool AProceduralGlobe::isFaceWater(int faceIndex) {
+	return kyleGlobeGen->dcel->faces[faceIndex]->isWater;
 }
 
 TArray<FIntVector> AProceduralGlobe::GetAllWaterTrianglesBy3s()
@@ -58,6 +67,10 @@ void AProceduralGlobe::GenerateDadGlobeGenAtNSubdivisions(int subdivisions)
 	dadGlobeGen->Prepare(subdivisions);
 }
 
+int AProceduralGlobe::GetFaceCount()
+{
+	return faceCount;
+}
 
 // Called when the game starts or when spawned
 void AProceduralGlobe::BeginPlay()

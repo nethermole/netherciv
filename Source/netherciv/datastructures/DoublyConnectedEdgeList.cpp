@@ -219,24 +219,24 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 
 
 	allVerticeLocations = {};
-	allTriangles = {};
 
 	for (int i = 0; i < vertices.Num(); i++) {
 		vertices[i]->verticesIndex = i;
 		allVerticeLocations.Add(vertices[i]->location);
 	}
 
-	allTriangles = {};
-	trianglesBy3s = {};
-	for (int f = 0; f < faces.Num(); f++) {
-		face* faceRef = faces[f];
-		if (IsTriangle(faceRef)) {
-			allTriangles.Append({
-				faceRef->reps[0]->tail->verticesIndex,
-				faceRef->reps[1]->tail->verticesIndex,
-				faceRef->reps[2]->tail->verticesIndex
-				});
+	for (int faceIndex = 0; faceIndex < faces.Num(); faceIndex++) {
+		if (faceIndex % 10000 == 0) {
+			UE_LOG(LogTemp, Display, TEXT("Finalizing face %d"), faceIndex);
 		}
+
+		face* faceRef = faces[faceIndex];
+
+		if (IsTriangle(faceRef)) {	//this basically doesn't happen
+			throw std::exception("trying to directly render a triangle, rather than subdivide a face");
+		}
+
+
 		else {
 			FVector midpoint = FVector(0, 0, 0);
 			for (int i = 0; i < faceRef->reps.Num(); i++) {
@@ -249,7 +249,7 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 			//Start determining if water
 			float atanX = atan(midpoint.Y / midpoint.X);
 			float radiansAroundGlobe;
-			UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, atan:%f"), midpoint.X, midpoint.Y, FMath::RadiansToDegrees(atanX));
+			//UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, atan:%f"), midpoint.X, midpoint.Y, FMath::RadiansToDegrees(atanX));
 			if (midpoint.Y > 0 && midpoint.X > 0) {
 				radiansAroundGlobe = atanX;
 			}
@@ -266,50 +266,48 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 				UE_LOG(LogTemp, Display, TEXT("How this happen? x:%f, y:%f"), midpoint.X, midpoint.Y);
 			}
 			float percentRadiallyAroundGlobe = radiansAroundGlobe / (2 * UE_PI);
-			UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, degreesAroundGlobe:%f, percentRadiallyAroundGlobe:%f"), midpoint.X, midpoint.Y, FMath::RadiansToDegrees(radiansAroundGlobe), percentRadiallyAroundGlobe);
 			int pixelX = globeImage.getWidth() * (1.0f-percentRadiallyAroundGlobe);	//gotta invert x-axis
 
 			float percentLinearlyUpGlobe = (midpoint.Z + UE_DIST_GLOBE_RADIUS) / (UE_DIST_GLOBE_RADIUS * 2);	//weird math because the southern hemisphere has negative Z-coord
 			int pixelY = globeImage.getHeight() * percentLinearlyUpGlobe;
 
-			UE_LOG(LogTemp, Display, TEXT("Z:%f, percZ:%f"), midpoint.Z, percentLinearlyUpGlobe);
+			//UE_LOG(LogTemp, Display, TEXT("Z:%f, percZ:%f"), midpoint.Z, percentLinearlyUpGlobe);
 
 			Color mapPointHexColor = globeImage.GetColor(pixelX, pixelY);
 			bool water = mapPointHexColor.r > 0.95;
 			//End getting water
 
-			for (int i = 0; i < faceRef->reps.Num(); i++) {
+			faceRef->triangleIntVectors = {};
+			for (int i = 0; i < faceRef->reps.Num(); i++) {				
 				half_edge* edge = faceRef->reps[i];
 
-				allTriangles.Append({
-					edge->tail->verticesIndex,
-					edge->next->tail->verticesIndex,
-				allVerticeLocations.Num() - 1
-					});
-
-				trianglesBy3s.Add(FIntVector(
+				faceRef->triangleIntVectors.Add(FIntVector(
 					edge->tail->verticesIndex,
 					edge->next->tail->verticesIndex,
 					allVerticeLocations.Num() - 1
 				));
 
 				if (water) {
-					waterTrianglesBy3s.Add(FIntVector(
-						edge->tail->verticesIndex,
-						edge->next->tail->verticesIndex,
-						allVerticeLocations.Num() - 1
-					));
+					faceRef->isWater = true;
 				}
 				else {
-					landTrianglesBy3s.Add(FIntVector(
-						edge->tail->verticesIndex,
-						edge->next->tail->verticesIndex,
-						allVerticeLocations.Num() - 1
-					));
+					faceRef->isWater = false;
 				}
 			}
 		}
 	}
+}
+
+TArray<FIntVector> DoublyConnectedEdgeList::GetTriangleIntVectorsForFaceByIndex(int faceIndex)
+{
+	if (faceIndex % 1000 == 0) {
+		UE_LOG(LogTemp, Display, TEXT("Face %d: approx percent complete:%d"), faceIndex, faceIndex*100/faces.Num());
+	}
+	return faces[faceIndex]->triangleIntVectors;
+}
+
+bool DoublyConnectedEdgeList::IsFaceWater(int faceIndex) {
+	return faces[faceIndex]->isWater;
 }
 
 
@@ -569,7 +567,6 @@ void DoublyConnectedEdgeList::DoClockwiseAssignment(bool isHexGlobe) {
 
 TArray<vertex*> DoublyConnectedEdgeList::GenerateHexGlobeVertices() {
 	TRACE_CPUPROFILER_EVENT_SCOPE(DoublyConnectedEdgeList::GenerateHexGlobeVertices)
-
 
 	TArray<vertex*> newHexGlobeVertices = {};
 	TSet<face*> visitedFaces = {};

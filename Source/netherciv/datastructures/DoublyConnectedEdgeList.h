@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "set"
 
+
 struct half_edge {
 	struct half_edge* prev;  /* prev->next == this */
 	struct half_edge* next;  /* next->prev == this */
@@ -19,6 +20,8 @@ struct face {
 	TArray<half_edge*> reps;
 
 	FString name;
+	bool isWater;
+	TArray<FIntVector> triangleIntVectors;
 };
 
 struct vertex {
@@ -65,6 +68,9 @@ public:
 	void CalculateHalfEdges(bool isHexGlobe);
 
 	void PrepareVerticeLocationsAndTriangles();
+	TArray<FIntVector> GetTriangleIntVectorsForFaceByIndex(int faceIndex);
+
+	bool IsFaceWater(int faceIndex);
 
 	TArray<vertex*> vertices;
 	TSet<vertex*> originalVertices;
@@ -74,13 +80,10 @@ public:
 	TMap<vertex*, TArray<vertex*>> adjacentVertices;
 	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices;
 
-	TArray<FIntVector> trianglesBy3s;
-
 	TArray<FIntVector> waterTrianglesBy3s;
 	TArray<FIntVector> landTrianglesBy3s;
 
 	TArray<FVector> allVerticeLocations;
-	TArray<int> allTriangles;
 
 	static bool IsTriangle(face* face_in);
 	static bool IsPentagon(face* face_in);
