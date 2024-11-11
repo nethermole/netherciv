@@ -62,6 +62,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	int GetFaceCount();
 
+	UFUNCTION(BlueprintCallable)
+	int GetFaceIDOfInitialHumanSpawnableLocation();
+
+	UFUNCTION(BlueprintCallable)
+	FVector GetMidpointOfFace(int faceId);
+
 
 protected:
 	// Called when the game starts or when spawned

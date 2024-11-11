@@ -43,6 +43,24 @@ bool AProceduralGlobe::isFaceWater(int faceIndex) {
 	return kyleGlobeGen->dcel->faces[faceIndex]->isWater;
 }
 
+int AProceduralGlobe::GetFaceIDOfInitialHumanSpawnableLocation() {
+	int maxFaceIndex = kyleGlobeGen->dcel->faces.Num()-1;
+
+	for (int i = 0; i < 1000000; i++) {
+		int faceToCheck = FMath::RandRange(0, maxFaceIndex);
+		if (!kyleGlobeGen->dcel->faces[faceToCheck]->isWater) {
+			return faceToCheck;
+		}
+	}
+	UE_LOG(LogTemp, Display, TEXT("Failed to find place to spawn initial human"));
+	return -1;
+}
+
+FVector AProceduralGlobe::GetMidpointOfFace(int faceId) {
+	return kyleGlobeGen->dcel->GetMidpointOfFace(faceId);
+}
+
+
 TArray<FIntVector> AProceduralGlobe::GetAllWaterTrianglesBy3s()
 {
 	//return dadGlobeGen->GetWaterTrianglesBy3s();

@@ -25,10 +25,11 @@ public:
 
 	Color GetColor(int x, int y) const;
 	void SetColor(const Color& color, int x, int y);
-	void PrintColors();
 
 	void Read(const char* path);
 	void Export(const char* path);
+
+	std::tuple<int, int> getXYFromXYZ(double x, double y, double z, int globeRadius);
 
 	int getWidth();
 	int getHeight();

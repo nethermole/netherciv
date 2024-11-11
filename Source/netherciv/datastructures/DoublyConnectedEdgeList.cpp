@@ -205,6 +205,17 @@ bool DoublyConnectedEdgeList::IsHexagon(face* face_in) {
 	return face_in->reps.Num() == 6;
 }
 
+FVector DoublyConnectedEdgeList::GetMidpointOfFace(int faceId) {
+	face* faceRef = faces[faceId];
+	FVector midpoint = FVector(0, 0, 0);
+	for (int i = 0; i < faceRef->reps.Num(); i++) {
+		midpoint += faceRef->reps[i]->tail->location;
+	}
+	midpoint /= faceRef->reps.Num();
+
+	return midpoint;
+}
+
 //UV0s not working
 void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 {
@@ -245,35 +256,12 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 			midpoint /= faceRef->reps.Num();
 			allVerticeLocations.Add(midpoint);
 
+			std::tuple<int, int> xy = globeImage.getXYFromXYZ(midpoint.X, midpoint.Y, midpoint.Z, UE_DIST_GLOBE_RADIUS);
 
-			//Start determining if water
-			float atanX = atan(midpoint.Y / midpoint.X);
-			float radiansAroundGlobe;
-			//UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, atan:%f"), midpoint.X, midpoint.Y, FMath::RadiansToDegrees(atanX));
-			if (midpoint.Y > 0 && midpoint.X > 0) {
-				radiansAroundGlobe = atanX;
-			}
-			else if (midpoint.Y > 0 && midpoint.X < 0) {
-				radiansAroundGlobe = UE_PI + atanX;
-			}
-			else if (midpoint.Y < 0 && midpoint.X < 0) {
-				radiansAroundGlobe = UE_PI + atanX;
-			}
-			else if (midpoint.Y < 0 && midpoint.X > 0) {
-				radiansAroundGlobe = (2*UE_PI) + atanX;
-			}
-			else {
-				UE_LOG(LogTemp, Display, TEXT("How this happen? x:%f, y:%f"), midpoint.X, midpoint.Y);
-			}
-			float percentRadiallyAroundGlobe = radiansAroundGlobe / (2 * UE_PI);
-			int pixelX = globeImage.getWidth() * (1.0f-percentRadiallyAroundGlobe);	//gotta invert x-axis
-
-			float percentLinearlyUpGlobe = (midpoint.Z + UE_DIST_GLOBE_RADIUS) / (UE_DIST_GLOBE_RADIUS * 2);	//weird math because the southern hemisphere has negative Z-coord
-			int pixelY = globeImage.getHeight() * percentLinearlyUpGlobe;
 
 			//UE_LOG(LogTemp, Display, TEXT("Z:%f, percZ:%f"), midpoint.Z, percentLinearlyUpGlobe);
 
-			Color mapPointHexColor = globeImage.GetColor(pixelX, pixelY);
+			Color mapPointHexColor = globeImage.GetColor(std::get<0>(xy), std::get<1>(xy));
 			bool water = mapPointHexColor.r > 0.95;
 			//End getting water
 

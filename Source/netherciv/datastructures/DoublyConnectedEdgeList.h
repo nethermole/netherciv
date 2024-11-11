@@ -61,6 +61,8 @@ public:
 
 	static TArray<half_edge*>  CreateHalfEdges(vertex* v1, vertex* v2);
 
+	FVector GetMidpointOfFace(int faceId);
+
 
 	TMap<vertex*, TArray<vertex*>> GetVertexAdjacencies(TArray<vertex*> vertices_param, bool isHexGlobe);
 	TMap<vertex*, TMap<vertex*, half_edge*>> GetHalfEdgesBetweenVertices(TMap<vertex*, TArray<vertex*>> adjacentVertices_param);

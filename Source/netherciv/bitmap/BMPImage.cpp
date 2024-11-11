@@ -31,15 +31,35 @@ void BMPImage::SetColor(const Color& color, int x, int y)
 	m_colors[y * m_width + x].b = color.b;
 }
 
-void BMPImage::PrintColors() {
-	//for (int y = 0; y < m_height; y++) {
-	//	for (int x = 0; x < m_width; x++) {
-	//		UE_LOG(LogTemp, Display, TEXT("%f, %f, %f"), 
-	//			m_colors[y * m_width + x].r, 
-	//			m_colors[y * m_width + x].g, 
-	//			m_colors[y * m_width + x].b);
-	//	}
-	//}
+std::tuple<int, int> BMPImage::getXYFromXYZ(double x, double y, double z, int globeRadius) {
+	//Start determining if water
+	float atanX = atan(y / x);
+	float radiansAroundGlobe;
+	//UE_LOG(LogTemp, Display, TEXT("x:%f, y:%f, atan:%f"), x, y, FMath::RadiansToDegrees(atanX));
+	if (y > 0 && x > 0) {
+		radiansAroundGlobe = atanX;
+	}
+	else if (y > 0 && x < 0) {
+		radiansAroundGlobe = UE_PI + atanX;
+	}
+	else if (y < 0 && x < 0) {
+		radiansAroundGlobe = UE_PI + atanX;
+	}
+	else if (y < 0 && x > 0) {
+		radiansAroundGlobe = (2 * UE_PI) + atanX;
+	}
+	else {
+		//UE_LOG(LogTemp, Display, TEXT("How this happen? x:%f, y:%f"), x, y);
+	}
+	float percentRadiallyAroundGlobe = radiansAroundGlobe / (2 * UE_PI);
+	int pixelX = getWidth() * (1.0f - percentRadiallyAroundGlobe);	//gotta invert x-axis
+
+	float percentLinearlyUpGlobe = (z + globeRadius) / (globeRadius * 2);	//weird math because the southern hemisphere has negative Z-coord
+	int pixelY = getHeight() * percentLinearlyUpGlobe;
+
+	//UE_LOG(LogTemp, Display, TEXT("px:%d, py:%d"), pixelX, pixelY);
+
+	return std::tuple<int, int>(pixelX, pixelY);
 }
 
 void BMPImage::Read(const char* path)
