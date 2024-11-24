@@ -23,8 +23,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	//on-repped from BP. Used in isNetRelevantFor calculations
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int tileId;
+	int cppFaceId;
 
 	bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 
