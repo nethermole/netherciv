@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "BP_PlayerCharacter.generated.h"
+#include "GlobePlayerCharacter.generated.h"
 
 UCLASS()
-class NETHERCIV_API ABP_PlayerCharacter : public ACharacter
+class NETHERCIV_API AGlobePlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	ABP_PlayerCharacter();
+	AGlobePlayerCharacter();
 
 protected:
 	// Called when the game starts or when spawned

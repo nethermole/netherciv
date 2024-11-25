@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "BP_PlayerCharacter.h"
+#include "GlobePlayerCharacter.h"
 
 // Sets default values
-ABP_PlayerCharacter::ABP_PlayerCharacter()
+AGlobePlayerCharacter::AGlobePlayerCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -12,21 +12,21 @@ ABP_PlayerCharacter::ABP_PlayerCharacter()
 }
 
 // Called when the game starts or when spawned
-void ABP_PlayerCharacter::BeginPlay()
+void AGlobePlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
 // Called every frame
-void ABP_PlayerCharacter::Tick(float DeltaTime)
+void AGlobePlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
 // Called to bind functionality to input
-void ABP_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AGlobePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
