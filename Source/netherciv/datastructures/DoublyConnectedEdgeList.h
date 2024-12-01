@@ -12,7 +12,7 @@ struct half_edge {
 	struct half_edge* twin;  /* twin->twin == this */
 	struct vertex* tail;     /* twin->next->tail == tail &&
 								prev->twin->tail == tail */
-	struct face* left;       /* prev->left == left && next->left == left */
+	struct face* faceRef;       /* prev->faceRef == left && next->left == left */
 	FString name;
 };
 
@@ -22,6 +22,8 @@ struct face {
 	FString name;
 	bool isWater;
 	TArray<FIntVector> triangleIntVectors;
+
+	int faceIndex;
 };
 
 struct vertex {

@@ -113,8 +113,12 @@ void DoublyConnectedEdgeList::ReadFromFile(int subd) {
 		TArray<FString> refs;
 		contentLines[lineIndex].ParseIntoArray(refs, TEXT(","));
 		for (int i = 0; i < refs.Num(); i++) {
-			newFace->reps.Add(heArray[FCString::Atoi(*(refs[i]))]);
+			half_edge* halfEdge = heArray[FCString::Atoi(*(refs[i]))];
+			halfEdge->faceRef = newFace;
+			newFace->reps.Add(halfEdge);
 		}
+
+		newFace->faceIndex = faces.Num();
 		faces.Add(newFace);
 
 		lineIndex++;
@@ -441,12 +445,13 @@ void DoublyConnectedEdgeList::GetFacesFromHalfEdges(TMap<vertex*, TMap<vertex*, 
 				newFace->name += current_edge->name;
 
 				newFace->reps.Add(current_edge);
-				current_edge->left = newFace;
+				current_edge->faceRef = newFace;
 				visitedEdges.Add(current_edge);
 
 				current_edge = current_edge->next;
 			}
 
+			newFace->faceIndex = faces.Num();
 			faces.Add(newFace);
 		}
 	}
@@ -565,10 +570,10 @@ TArray<vertex*> DoublyConnectedEdgeList::GenerateHexGlobeVertices() {
 		TArray<half_edge*> halfEdgesFacingAway = {};
 		halfEdgesBetweenVertices[v1].GenerateValueArray(halfEdgesFacingAway);
 		for (int j = 0; j < halfEdgesFacingAway.Num(); j++) {
-			if (!visitedFaces.Contains(halfEdgesFacingAway[j]->left)) {
-				visitedFaces.Add(halfEdgesFacingAway[j]->left);
+			if (!visitedFaces.Contains(halfEdgesFacingAway[j]->faceRef)) {
+				visitedFaces.Add(halfEdgesFacingAway[j]->faceRef);
 
-				adjacentFaces.Add(halfEdgesFacingAway[j]->left);
+				adjacentFaces.Add(halfEdgesFacingAway[j]->faceRef);
 			}
 		}
 

@@ -22,5 +22,9 @@ public:
 
 	void LoadGlobeFromFile(int subdivisions);
 
+	TArray<int> GetAdjacentFaceIDs(int faceID);
+
+	TArray<int> GetAdjacentLandFaceIDs(int faceID);
+
 	DoublyConnectedEdgeList* dcel;
 };

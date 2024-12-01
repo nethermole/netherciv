@@ -68,6 +68,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FVector GetMidpointOfFace(int faceId);
 
+	UFUNCTION(BlueprintCallable)
+	TArray<int> GetAdjacentFaceIDs(int faceID);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<int> GetAdjacentLandFaceIDs(int faceID);
+
 
 protected:
 	// Called when the game starts or when spawned

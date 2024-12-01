@@ -60,6 +60,16 @@ FVector AProceduralGlobe::GetMidpointOfFace(int faceId) {
 	return kyleGlobeGen->dcel->GetMidpointOfFace(faceId);
 }
 
+TArray<int> AProceduralGlobe::GetAdjacentFaceIDs(int faceID)
+{
+	return kyleGlobeGen->GetAdjacentFaceIDs(faceID);
+}
+
+TArray<int> AProceduralGlobe::GetAdjacentLandFaceIDs(int faceID)
+{
+	return kyleGlobeGen->GetAdjacentLandFaceIDs(faceID);
+}
+
 
 TArray<FIntVector> AProceduralGlobe::GetAllWaterTrianglesBy3s()
 {
