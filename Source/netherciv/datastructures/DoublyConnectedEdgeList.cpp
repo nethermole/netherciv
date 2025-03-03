@@ -247,7 +247,7 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 
 		face* faceRef = faces[faceIndex];
 
-		if (IsTriangle(faceRef)) {	//this basically doesn't happen
+		if (IsTriangle(faceRef)) {	//this should not happen
 			throw std::exception("trying to directly render a triangle, rather than subdivide a face");
 		}
 
@@ -273,11 +273,16 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 			for (int i = 0; i < faceRef->reps.Num(); i++) {				
 				half_edge* edge = faceRef->reps[i];
 
-				faceRef->triangleIntVectors.Add(FIntVector(
+				FIntVector triangleIntVector = FIntVector(
 					edge->tail->verticesIndex,
 					edge->next->tail->verticesIndex,
 					allVerticeLocations.Num() - 1
-				));
+				);
+				
+				faceRef->triangleIndices.Add(allFaceTriangles.Num());
+				faceRef->triangleIntVectors.Add(triangleIntVector);
+				
+				allFaceTriangles.Add(triangleIntVector);
 
 				if (water) {
 					faceRef->isWater = true;
@@ -288,6 +293,31 @@ void DoublyConnectedEdgeList::PrepareVerticeLocationsAndTriangles()
 			}
 		}
 	}
+}
+
+TArray<int> DoublyConnectedEdgeList::GetAllLandTriangleIndices() {
+	TArray<int> allLandTriangles = {};
+	for (face* face : faces.FilterByPredicate([&](face* face) {return ! face->isWater; })) {
+		allLandTriangles.Append(face->triangleIndices);
+	}
+	return allLandTriangles;
+}
+
+TArray<int> DoublyConnectedEdgeList::GetAllWaterTriangleIndices() {
+	TArray<int> allWaterTriangles = {};
+	for (face* face : faces.FilterByPredicate([&](face* face) {return face->isWater; })) {
+		allWaterTriangles.Append(face->triangleIndices);
+	}
+	return allWaterTriangles;
+}
+
+void DoublyConnectedEdgeList::SetFaceIsWater(int faceIndex, bool water) {
+	faces[faceIndex]->isWater = water;
+}
+
+TArray<FIntVector> DoublyConnectedEdgeList::GetAllFaceTriangles()
+{
+	return allFaceTriangles;
 }
 
 TArray<FIntVector> DoublyConnectedEdgeList::GetTriangleIntVectorsForFaceByIndex(int faceIndex)
@@ -633,6 +663,7 @@ void DoublyConnectedEdgeList::Subdivide() {
 	}
 }
 
+//THESE COORDINATES RESULT IN TRIANGLES WITH EDGE LENGTH 2
 void DoublyConnectedEdgeList::LoadIcosahedronCartesianCoordinates() {
 	TArray<TArray<TArray<double>>> icosahedronCartesianCoordinates =
 	{

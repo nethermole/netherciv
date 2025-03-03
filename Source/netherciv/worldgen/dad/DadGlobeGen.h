@@ -41,5 +41,5 @@ private:
 	TArray<FIntVector> waterTrianglesBy3s;
 	TArray<FIntVector> landTrianglesBy3s;
 
-	int UE_DIST_GLOBE_RADIUS;
+	float UE_DIST_GLOBE_RADIUS;
 };

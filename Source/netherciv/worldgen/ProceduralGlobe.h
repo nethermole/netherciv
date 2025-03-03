@@ -34,6 +34,18 @@ public:
 	TArray<FVector> GetAllVerticeLocations();
 
 	UFUNCTION(BlueprintCallable)
+	TArray<FIntVector> GetAllFaceTriangles();
+
+	UFUNCTION(BlueprintCallable)
+	void SetFaceIsWater(int faceIndex, bool water);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<int> GetAllWaterTriangleIndices();
+
+	UFUNCTION(BlueprintCallable)
+	TArray<int> GetAllLandTriangleIndices();
+
+	UFUNCTION(BlueprintCallable)
 	TArray<FIntVector> GetTriangleIntVectorsForFaceByIndex(int faceIndex);
 
 	UFUNCTION(BlueprintCallable)

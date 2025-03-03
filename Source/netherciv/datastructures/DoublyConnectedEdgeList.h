@@ -22,6 +22,7 @@ struct face {
 	FString name;
 	bool isWater;
 	TArray<FIntVector> triangleIntVectors;
+	TArray<int> triangleIndices;
 
 	int faceIndex;
 };
@@ -72,7 +73,12 @@ public:
 	void CalculateHalfEdges(bool isHexGlobe);
 
 	void PrepareVerticeLocationsAndTriangles();
+	TArray<FIntVector> GetAllFaceTriangles();
+	void SetFaceIsWater(int faceIndex, bool water);
+
 	TArray<FIntVector> GetTriangleIntVectorsForFaceByIndex(int faceIndex);
+	TArray<int> GetAllWaterTriangleIndices();
+	TArray<int> GetAllLandTriangleIndices();
 
 	bool IsFaceWater(int faceIndex);
 
@@ -80,6 +86,7 @@ public:
 	TSet<vertex*> originalVertices;
 
 	TArray<face*> faces;
+	TArray<FIntVector> allFaceTriangles;
 
 	TMap<vertex*, TArray<vertex*>> adjacentVertices;
 	TMap<vertex*, TMap<vertex*, half_edge*>> halfEdgesBetweenVertices;
@@ -100,5 +107,5 @@ public:
 	void ReadFromFile(int subd);
 
 private:
-	int UE_DIST_GLOBE_RADIUS;
+	float UE_DIST_GLOBE_RADIUS;
 };

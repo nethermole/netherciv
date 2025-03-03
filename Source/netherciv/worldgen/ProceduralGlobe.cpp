@@ -28,6 +28,21 @@ void AProceduralGlobe::GenerateWorld(int subdivisions)
 	UE_LOG(LogTemp, Display, TEXT("Done loading world in code, now blueprint time"));
 }
 
+TArray<int> AProceduralGlobe::GetAllWaterTriangleIndices() {
+	return kyleGlobeGen->dcel->GetAllWaterTriangleIndices();
+}
+
+TArray<int> AProceduralGlobe::GetAllLandTriangleIndices() {
+	return kyleGlobeGen->dcel->GetAllLandTriangleIndices();
+}
+
+TArray<FIntVector> AProceduralGlobe::GetAllFaceTriangles() {
+	return kyleGlobeGen->dcel->GetAllFaceTriangles();
+}
+
+void AProceduralGlobe::SetFaceIsWater(int faceIndex, bool water) {
+	kyleGlobeGen->dcel->SetFaceIsWater(faceIndex, water);
+}
 
 TArray<FVector> AProceduralGlobe::GetAllVerticeLocations()
 {
@@ -82,6 +97,8 @@ TArray<FIntVector> AProceduralGlobe::GetAllLandTrianglesBy3s()
 	//return dadGlobeGen->GetLandTrianglesBy3s();
 	return kyleGlobeGen->dcel->landTrianglesBy3s;
 }
+
+
 
 void AProceduralGlobe::GenerateKyleGlobeGenFilesUpToNSubdivisions(int subdivisions)
 {
