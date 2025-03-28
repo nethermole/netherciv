@@ -1,0 +1,1 @@
+./Binaries/Win64/nethercivServer.exe -AllowStdOutLogVerbosity -Verbose

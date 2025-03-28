@@ -71,14 +71,10 @@ TArray<int> KyleGlobeGen::GetAdjacentFaceIDs(int faceID)
 	UE_LOG(LogTemp, Display, TEXT("Getting faceIDs adjacent to %d"), faceID);
 
 	TArray<int> adjacentFaceIDs = {};
-	try {
-		for (half_edge* faceEdge : dcel->faces[faceID]->reps) {
-			adjacentFaceIDs.Add(faceEdge->twin->faceRef->faceIndex);
-		}
+	for (half_edge* faceEdge : dcel->faces[faceID]->reps) {
+		adjacentFaceIDs.Add(faceEdge->twin->faceRef->faceIndex);
 	}
-	catch (...) {
-		UE_LOG(LogTemp, Display, TEXT("Exception while getting face %d"), faceID);
-	}
+	
 	return adjacentFaceIDs;
 }
 

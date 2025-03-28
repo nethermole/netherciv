@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.3",
+	"EngineAssociation": "{7CCE4715-425E-68CE-B3EF-8AAA96ECEC86}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -29,5 +29,8 @@
 			"Name": "PCGGeometryScriptInterop",
 			"Enabled": true
 		}
+	],
+	"TargetPlatforms": [
+		"Windows"
 	]
 }
