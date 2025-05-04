@@ -86,6 +86,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	TArray<int> GetAdjacentLandFaceIDs(int faceID);
 
+	UFUNCTION(BlueprintCallable)
+	TArray<int> SerializeEntireMapForClientUpdate();
 
 protected:
 	// Called when the game starts or when spawned

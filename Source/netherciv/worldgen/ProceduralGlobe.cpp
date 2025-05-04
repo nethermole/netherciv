@@ -6,6 +6,8 @@
 #include "math.h"
 
 #include "netherciv/util/Util.h"
+#include "netherciv/ZLIBWrapper.h"
+#include <iostream>
 
 // Sets default values
 AProceduralGlobe::AProceduralGlobe()
@@ -83,6 +85,17 @@ TArray<int> AProceduralGlobe::GetAdjacentFaceIDs(int faceID)
 TArray<int> AProceduralGlobe::GetAdjacentLandFaceIDs(int faceID)
 {
 	return kyleGlobeGen->GetAdjacentLandFaceIDs(faceID);
+}
+
+TArray<int> AProceduralGlobe::SerializeEntireMapForClientUpdate()
+{
+	UE_LOG(LogTemp, Display, TEXT("FUNCTION START"));
+
+	TArray<int> encodedMap = kyleGlobeGen->EncodeEntireMap();
+
+	UE_LOG(LogTemp, Display, TEXT("FUNCTION END"));
+
+	return {};
 }
 
 

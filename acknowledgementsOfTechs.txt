@@ -1,0 +1,3 @@
+zlib (soon), for world compression
+worldgen (nearest n vertices, bucketting lib)
+maybe goldberg polyhedron algorithm, but idk
